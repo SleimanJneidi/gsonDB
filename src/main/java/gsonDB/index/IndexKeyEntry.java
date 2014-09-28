@@ -1,4 +1,4 @@
-package gsonDB;
+package gsonDB.index;
 
 /**
  * Created by Sleiman on 28/09/2014.

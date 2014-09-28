@@ -1,4 +1,6 @@
-package gsonDB;
+package gsonDB.index;
+
+import gsonDB.DB;
 
 import java.io.File;
 import java.io.FileNotFoundException;
