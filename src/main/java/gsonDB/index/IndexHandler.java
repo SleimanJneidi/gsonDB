@@ -50,9 +50,9 @@ class IndexHandler {
     private IndexHandler(final Class<?> entityType, final DB db) throws FileNotFoundException {
         this.db = db;
         this.entityType = entityType;
-        final String indexFileName = entityType.getName()+ "_index";
+        final String indexFileName = entityType.getSimpleName()+ "_index";
         this.file = new File(db.getDbDir(),indexFileName);
-        this.indexFile = new RandomAccessFile(indexFileName,"rw");
+        this.indexFile = new RandomAccessFile(this.file,"rw");
     }
 
 
