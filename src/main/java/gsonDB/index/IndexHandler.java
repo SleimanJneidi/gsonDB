@@ -1,13 +1,18 @@
 package gsonDB.index;
 
+import com.google.common.base.Supplier;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
 import gsonDB.DB;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +37,6 @@ class IndexHandler {
     private static final int INDEX_KEY_ENTRY_SIZE = KEY_SIZE + FILE_POINTER_SIZE + RECORD_LENGTH_SIZE;
 
 
-
     public static IndexHandler getIndexHandler(final Class<?> type,final DB db) throws FileNotFoundException {
         if (indexHandlers.containsKey(type)) {
             return indexHandlers.get(type);
@@ -45,18 +49,61 @@ class IndexHandler {
     private IndexHandler(final Class<?> entityType, final DB db) throws FileNotFoundException {
         this.db = db;
         this.entityType = entityType;
-        final String indexFileName = entityType.getName()+"_index";
+        final String indexFileName = entityType.getName()+ "_index";
         this.file = new File(db.getDbDir(),indexFileName);
         this.indexFile = new RandomAccessFile(indexFileName,"rw");
-
     }
 
+<<<<<<< HEAD
+=======
+
+
+    public int getNumberOfRecords() throws IOException {
+        return fetchNumberOfRecords();
+    }
+
+>>>>>>> FETCH_HEAD
     private int fetchNumberOfRecords() throws IOException {
+        if(this.indexFile.length()==0){ // nothing to read
+            return 0;
+        }
         this.indexFile.seek(NUM_OF_RECORDS_FILE_POINTER);
         int numberOfRecords = this.indexFile.readInt();
         return numberOfRecords;
     }
 
+    private Supplier<IndexKeyEntry> fetchNextIndexKeyEntry(){
+        final Supplier<IndexKeyEntry> indexKeyEntrySupplier = new Supplier<IndexKeyEntry>() {
+            @Override
+            public IndexKeyEntry get() {
+                IndexKeyEntry indexKeyEntry = null;
+                byte[]keyBuffer = new byte[KEY_SIZE];
+                try {
+                    indexFile.readFully(keyBuffer);
+                    String key = new String(keyBuffer);
+                    long filePointer = indexFile.readLong();
+                    int recordSize = indexFile.readInt();
+                    indexKeyEntry = new IndexKeyEntry(key,filePointer,recordSize);
+                    return indexKeyEntry;
+                } catch (IOException e) {
+                   e.printStackTrace(); //FIXME
+                }
+                return indexKeyEntry;
+            }
+        };
+        return indexKeyEntrySupplier;
+    }
+
+    private Set<IndexKeyEntry> allIndexEntries() throws IOException {
+        final int numberOfRecords = this.fetchNumberOfRecords();
+        Set<IndexKeyEntry> indexKeyEntries = new HashSet<>(numberOfRecords);
+        this.indexFile.seek(KEY_TABLE_FILE_POINTER);
+
+        for(int i =0;i<numberOfRecords;i++){
+          indexKeyEntries.add(this.fetchNextIndexKeyEntry().get());
+        }
+        return allIndexEntries();
+    }
     public static Map<Class<?>, IndexHandler> allIndexHandlers(){
         return Collections.unmodifiableMap(indexHandlers);
     }
@@ -76,4 +123,6 @@ class IndexHandler {
     protected RandomAccessFile getIndexFile() {
         return indexFile;
     }
+
+
 }
