@@ -11,13 +11,13 @@ public class DocumentHandler {
     private final RandomAccessFile dataFile;
     private final Class<?> entityType;
     private final DB db;
-    private final String documentFileName;
 
     private DocumentHandler(final Class<?> entityType, DB db) throws FileNotFoundException {
         this.db = db;
         this.entityType = entityType;
-        documentFileName = entityType.getName() + "_data.db";
-        this.dataFile = new RandomAccessFile(documentFileName, "rw");
+        String documentFileName = entityType.getName() + "_data.db";
+        File file = new File(db.getDbDir(),documentFileName);
+        this.dataFile = new RandomAccessFile(file, "rw");
     }
 
     public static final DocumentHandler getDocumentWriter(final Class<?> entityType, DB db) throws FileNotFoundException {
@@ -60,21 +60,22 @@ public class DocumentHandler {
         long readPointer =indexKeyEntry.getDataFilePointer()+ indexKeyEntry.getRecordSize();
         long writePointer = indexKeyEntry.getDataFilePointer();
 
-        FileChannel inChannel = this.dataFile.getChannel();
-        inChannel.position(readPointer);
-
-        ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
-        int bytesRead = inChannel.read(buf);
-        while (bytesRead != -1) {
-
-            inChannel.position(writePointer);
-            inChannel.write(buf);
-
-            readPointer += BUFFER_SIZE;
-            writePointer += BUFFER_SIZE;
-            buf.clear();
+        try(FileChannel inChannel = this.dataFile.getChannel()) {
             inChannel.position(readPointer);
-            bytesRead = inChannel.read(buf);
+
+            ByteBuffer buf = ByteBuffer.allocate(BUFFER_SIZE);
+            int bytesRead = inChannel.read(buf);
+            while (bytesRead != -1) {
+
+                inChannel.position(writePointer);
+                inChannel.write(buf);
+
+                readPointer += BUFFER_SIZE;
+                writePointer += BUFFER_SIZE;
+                buf.clear();
+                inChannel.position(readPointer);
+                bytesRead = inChannel.read(buf);
+            }
         }
     }
 }
