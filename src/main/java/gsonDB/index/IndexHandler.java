@@ -1,20 +1,16 @@
 package gsonDB.index;
 
 import com.google.common.base.Supplier;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Iterables;
 import gsonDB.DB;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Sleiman on 28/09/2014.
@@ -54,15 +50,10 @@ class IndexHandler {
         this.indexFile = new RandomAccessFile(indexFileName,"rw");
     }
 
-<<<<<<< HEAD
-=======
-
-
     public int getNumberOfRecords() throws IOException {
         return fetchNumberOfRecords();
     }
 
->>>>>>> FETCH_HEAD
     private int fetchNumberOfRecords() throws IOException {
         if(this.indexFile.length()==0){ // nothing to read
             return 0;
