@@ -4,7 +4,7 @@ package gsonDB.index;
  * Created by Sleiman on 28/09/2014.
  */
 
-class IndexKeyEntry {
+public class IndexKeyEntry {
 
     private final String key;
     private final long dataFilePointer;

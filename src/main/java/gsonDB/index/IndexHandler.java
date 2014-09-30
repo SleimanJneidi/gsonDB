@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 class IndexHandler {
 
-    private static final Map<Class<?>, IndexHandler> indexHandlers = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, IndexHandler> indexHandlers = new ConcurrentHashMap<Class<?>, IndexHandler>();
 
     private final DB db;
     private final Class<?> entityType;
@@ -42,7 +42,6 @@ class IndexHandler {
         return newHandler;
     }
 
-
     private IndexHandler(final Class<?> entityType, final DB db) throws FileNotFoundException {
         this.db = db;
         this.entityType = entityType;
@@ -51,8 +50,6 @@ class IndexHandler {
         this.indexFile = new RandomAccessFile(indexFileName,"rw");
 
     }
-
-
 
     private int fetchNumberOfRecords() throws IOException {
         this.indexFile.seek(NUM_OF_RECORDS_FILE_POINTER);
