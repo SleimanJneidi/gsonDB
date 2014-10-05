@@ -50,7 +50,13 @@ public abstract class DocumentProcessor implements AutoCloseable {
         return new DefaultDocumentProcessor(entityType, db);
     }
 
-    public abstract void insert(Object object) throws IOException;
+    /**
+     *
+     * @param object POJO to be persisted
+     * @return JsonObject
+     * @throws IOException
+     */
+    public abstract JsonObject insert(Object object) throws IOException;
 
     public abstract <T> List<T> findAll(Class<T> entityType) throws IOException;
 

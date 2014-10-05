@@ -25,7 +25,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
     private static final int INDEX_KEY_ENTRY_SIZE = KEY_SIZE + FILE_POINTER_SIZE + RECORD_LENGTH_SIZE;
 
     protected DefaultIndexProcessor(final Class<?> entityType, final DB db) throws FileNotFoundException {
-      super(entityType,db);
+        super(entityType, db);
     }
 
     @Override
@@ -36,12 +36,11 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
 
     /**
-     *
      * @return number of records in the current index file, returns -1 of the file is empty
      * @throws java.io.IOException
      */
     private int fetchNumberOfRecords() throws IOException {
-        if(this.indexFile.length()==0){ // nothing to read
+        if (this.indexFile.length() == 0) { // nothing to read
             return -1; // file is empty
         }
         this.indexFile.seek(NUM_OF_RECORDS_FILE_POINTER);
@@ -49,18 +48,19 @@ public class DefaultIndexProcessor extends IndexProcessor {
         return numberOfRecords;
     }
 
-    private Supplier<IndexKeyEntry> fetchNextIndexKeyEntry(){
+    private Supplier<IndexKeyEntry> fetchNextIndexKeyEntry() {
         final Supplier<IndexKeyEntry> indexKeyEntrySupplier = new Supplier<IndexKeyEntry>() {
             @Override
             public IndexKeyEntry get() {
                 IndexKeyEntry indexKeyEntry = null;
-                byte[]keyBuffer = new byte[KEY_SIZE];
+                byte[] keyBuffer = new byte[KEY_SIZE];
                 try {
                     indexFile.readFully(keyBuffer);
                     String key = new String(keyBuffer);
+                    key = key.trim(); // the key is often less than 36 bytes
                     long filePointer = indexFile.readLong();
                     int recordSize = indexFile.readInt();
-                    indexKeyEntry = new IndexKeyEntry(key,filePointer,recordSize);
+                    indexKeyEntry = new IndexKeyEntry(key, filePointer, recordSize);
                     return indexKeyEntry;
                 } catch (IOException e) {
                     e.printStackTrace(); //FIXME
@@ -76,7 +76,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
         List<IndexKeyEntry> indexKeyEntries = new ArrayList<>(numberOfRecords);
         this.indexFile.seek(KEY_TABLE_FILE_POINTER);
 
-        for(int i = 0;i<numberOfRecords;i++){
+        for (int i = 0; i < numberOfRecords; i++) {
             indexKeyEntries.add(this.fetchNextIndexKeyEntry().get());
         }
         return indexKeyEntries;
@@ -92,12 +92,12 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
             this.indexFile.seek(this.indexFile.length());
             ByteBuffer keyByteBuffer = ByteBuffer.allocate(KEY_SIZE).put(indexKeyEntry.getKey().getBytes());
-            byte []keyBuffer = keyByteBuffer.array();
+            byte[] keyBuffer = keyByteBuffer.array();
 
             this.indexFile.write(keyBuffer);
             this.indexFile.writeLong(indexKeyEntry.getDataFilePointer());
             this.indexFile.writeInt(indexKeyEntry.getRecordSize());
-        }finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -106,6 +106,19 @@ public class DefaultIndexProcessor extends IndexProcessor {
         Preconditions.checkArgument(newNumberOfRecords >= 0);
         this.indexFile.seek(NUM_OF_RECORDS_FILE_POINTER);
         this.indexFile.writeInt(newNumberOfRecords);
+    }
+
+    public IndexKeyEntry getIndexByKey(String key) throws IOException {
+        Preconditions.checkNotNull(key);
+        int count = this.count();
+        this.indexFile.seek(KEY_TABLE_FILE_POINTER);
+        for (int i = 0; i < count; i++) {
+            IndexKeyEntry keyEntry = fetchNextIndexKeyEntry().get();
+            if(key.equals(keyEntry.getKey())){
+                return keyEntry;
+            }
+        }
+        return null;
     }
 
     @Override

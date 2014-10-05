@@ -32,20 +32,20 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
     }
 
     @Override
-    public void insert(Object object) throws IOException {
+    public JsonObject insert(Object object) throws IOException {
 
         Preconditions.checkNotNull(object, "Inserted object shouldn't be null");
         Gson gson = new Gson();
         JsonObject jsonObject = gson.toJsonTree(object).getAsJsonObject();
-        String id = null;
         JsonElement jsonIdElement = jsonObject.get(DEFAULT_ID_NAME);
+        String id = null;
         if (jsonIdElement != null) {
             id = jsonIdElement.getAsString();
         }
 
-        if (id != null && id.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
+        if (jsonIdElement != null && id.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
             throw new LongKeyException();
-        } else { // generate key for the document
+        } else if (jsonIdElement == null) { // generate key for the document
             id = UUID.randomUUID().toString();
             jsonObject.addProperty(DEFAULT_ID_NAME, id);
         }
@@ -64,6 +64,7 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
         } finally {
             this.lock.unlock();
         }
+        return jsonObject;
     }
 
 
@@ -89,8 +90,25 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
     }
 
     @Override
-    public <T> T find(Class<T> entityType, String id) {
-        throw new NotImplementedException();
+    public <T> T find(Class<T> entityType, String id) throws IOException {
+        DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
+        IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
+        if (indexKeyEntry == null)
+            return null;
+        try {
+            this.lock.lock();
+            long filePointer = indexKeyEntry.getDataFilePointer();
+            int recordSize = indexKeyEntry.getRecordSize();
+            byte[] buffer = new byte[recordSize];
+            dataFile.seek(filePointer);
+            dataFile.readFully(buffer);
+            String json = new String(buffer, "UTF-8");
+            T object = gson.fromJson(json, entityType);
+            return object;
+
+        } finally {
+            this.lock.unlock();
+        }
     }
 
     @Override
