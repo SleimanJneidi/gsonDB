@@ -1,9 +1,8 @@
 package gsonDB.document;
 
 import com.google.common.base.Preconditions;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
 import gsonDB.DB;
 import gsonDB.LongKeyException;
 import gsonDB.index.DefaultIndexProcessor;
@@ -11,10 +10,11 @@ import gsonDB.index.IndexKeyEntry;
 import gsonDB.index.IndexProcessor;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +28,7 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
 
     protected DefaultDocumentProcessor(Class<?> entityType, DB db) throws FileNotFoundException {
         super(entityType, db);
+        // gson.getAdapter(entityType).re
     }
 
     @Override
@@ -36,9 +37,13 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
         Preconditions.checkNotNull(object, "Inserted object shouldn't be null");
         Gson gson = new Gson();
         JsonObject jsonObject = gson.toJsonTree(object).getAsJsonObject();
-        String id = jsonObject.get(DEFAULT_ID_NAME).getAsString();
+        String id = null;
+        JsonElement jsonIdElement = jsonObject.get(DEFAULT_ID_NAME);
+        if (jsonIdElement != null) {
+            id = jsonIdElement.getAsString();
+        }
 
-        if (id != null && id.getBytes("UTF-8").length > DefaultIndexProcessor.KEY_SIZE) {
+        if (id != null && id.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
             throw new LongKeyException();
         } else { // generate key for the document
             id = UUID.randomUUID().toString();
@@ -46,21 +51,37 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
         }
 
 
-        final byte[] jsonStringBytes = jsonObject.getAsString().getBytes("UTF-8");
+        final byte[] jsonBuffer = jsonObject.toString().getBytes("UTF-8");
+
         try {
             this.lock.lock();
-            final long filePointer = this.writeDocument(jsonStringBytes);
-            IndexProcessor indexHandler = IndexProcessor.getIndexHandler(object.getClass(), db);
+
+            final long filePointer = this.writeDocument(jsonBuffer);
+            IndexProcessor indexProcessor = IndexProcessor.getIndexHandler(object.getClass(), db);
+            IndexKeyEntry indexKeyEntry = new IndexKeyEntry(id, filePointer, jsonBuffer.length);
+            indexProcessor.insertNewIndexEntry(indexKeyEntry);
 
         } finally {
             this.lock.unlock();
         }
     }
 
+
     @Override
-    public <T> List<T> findAll(Class<T> entityType) {
-        return null;
+    public <T> List<T> findAll(Class<T> entityType) throws IOException {
+        List<T> all = new ArrayList<>();
+        try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+            reader.beginArray();
+            while (reader.hasNext()) {
+                T object = gson.fromJson(reader, entityType);
+                all.add(object);
+            }
+            reader.endArray();
+        }
+
+        return all;
     }
+
 
     @Override
     public <T> List<T> findAll(Class<T> entityType, JsonElement query) {
@@ -69,7 +90,7 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
 
     @Override
     public <T> T find(Class<T> entityType, String id) {
-        return null;
+        throw new NotImplementedException();
     }
 
     @Override
@@ -82,12 +103,24 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
 
     }
 
-    protected long writeDocument(byte[] data) throws IOException {
-        long newEntryFilePointer = this.dataFile.length(); // EOF
-        this.dataFile.seek(newEntryFilePointer);
-        this.dataFile.write(data);
-        this.dataFile.getChannel();
-        return newEntryFilePointer;
+    protected long writeDocument(byte[] json) throws IOException {
+        long filePointer;
+        if (this.dataFile.length() == 0) { //empty file then  append array [
+            dataFile.writeBytes("[");
+            filePointer = this.dataFile.getFilePointer();
+
+            this.dataFile.write(json);
+            dataFile.writeBytes("]");
+            return filePointer;
+        } else {
+            filePointer = dataFile.length() - 1; // look behind 2 bytes (size of char)
+            dataFile.seek(filePointer);
+            dataFile.writeBytes(",");
+            filePointer = dataFile.getFilePointer();
+            dataFile.write(json);
+            dataFile.writeBytes("]");
+            return filePointer;
+        }
     }
 
     public byte[] readRecordEntry(IndexKeyEntry indexKeyEntry) throws IOException {

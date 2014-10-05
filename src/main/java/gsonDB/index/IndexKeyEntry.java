@@ -15,7 +15,7 @@ public class IndexKeyEntry {
     private final long dataFilePointer;
     private final int recordSize;
 
-    protected IndexKeyEntry(final String key, final long dataFilePointer, final int recordSize) {
+    public IndexKeyEntry(final String key, final long dataFilePointer, final int recordSize) {
 
         Preconditions.checkNotNull(key, "Key cannot be null");
         Preconditions.checkArgument(dataFilePointer >= 0);

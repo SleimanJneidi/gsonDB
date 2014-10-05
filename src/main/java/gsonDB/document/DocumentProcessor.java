@@ -21,25 +21,29 @@ import gsonDB.index.IndexKeyEntry;
 /**
  * @author Sleiman
  */
-public abstract class DocumentProcessor implements AutoCloseable{
+public abstract class DocumentProcessor implements AutoCloseable {
 
     protected final RandomAccessFile dataFile;
-    private final Class<?> entityType;
+    protected final File file;
+
+    protected final Class<?> entityType;
 
     protected final DB db;
+
     protected final Lock lock = new ReentrantLock();
+    protected final Gson gson = new Gson();
 
     protected DocumentProcessor(final Class<?> entityType, DB db) throws FileNotFoundException {
 
         this.db = db;
         this.entityType = entityType;
-        String documentFileName = entityType.getName() + "_data";
-        File file = new File(db.getDbDir(), documentFileName);
+        String documentFileName = entityType.getSimpleName() + "_data";
+        this.file = new File(db.getDbDir(), documentFileName);
         this.dataFile = new RandomAccessFile(file, "rw");
 
     }
 
-    public static final DocumentProcessor getDocumentProcessor(final Class<?> entityType, DB db) throws FileNotFoundException {
+    public static DocumentProcessor getDocumentProcessor(final Class<?> entityType,final DB db) throws FileNotFoundException {
         Preconditions.checkNotNull(entityType, "Entity type shouldn't be null");
         Preconditions.checkNotNull(db, "DB object shouldn't be null");
 
