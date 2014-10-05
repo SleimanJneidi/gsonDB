@@ -1,5 +1,6 @@
 package gsonDB.document;
 
+import com.google.common.base.Predicate;
 import com.google.gson.JsonObject;
 import gsonDB.AbstractTest;
 import gsonDB.Person;
@@ -18,57 +19,74 @@ import java.util.UUID;
  */
 public class DefaultDocumentProcessorTest extends AbstractTest {
 
-    private static DocumentProcessor documentProcessor;
-
-    static {
-        try {
-            documentProcessor = DocumentProcessor.getDocumentProcessor(Person.class, testDB);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    private DocumentProcessor documentProcessor() throws FileNotFoundException {
+        return DocumentProcessor.getDocumentProcessor(Person.class, testDB);
     }
+
 
     @Test
     public void testCanInsertDocuments() throws IOException {
 
         final List<Person> shortList = Person.createShortList();
         for (Person person : shortList) {
-            documentProcessor.insert(person);
+            documentProcessor().insert(person);
         }
 
-        List<Person> fromDB = documentProcessor.findAll(Person.class);
+        List<Person> fromDB = documentProcessor().findAll(Person.class);
         Assert.assertTrue(fromDB.size() == shortList.size());
     }
 
     @Test
     public void testCanGenerateKey() throws IOException {
         Person person = Person.createShortList().get(0);
-        JsonObject jsonObject =  documentProcessor.insert(person);
+        JsonObject jsonObject = documentProcessor().insert(person);
         String generatedKeyString = jsonObject.get("id").getAsString();
-        UUID generatedKey =  UUID.fromString(generatedKeyString);
+        UUID generatedKey = UUID.fromString(generatedKeyString);
         Assert.assertNotNull(generatedKey);
     }
 
     @Test
-    public void testCanUseProvidedKey() throws IOException{
-        Foo foo = new Foo(43,"Dave");
-        JsonObject jsonObject =  documentProcessor.insert(foo);
-        Assert.assertEquals(jsonObject.get("id").getAsInt(),foo.getId());
+    public void testCanUseProvidedKey() throws IOException {
+        Foo foo = new Foo(43, "Dave");
+        JsonObject jsonObject = documentProcessor().insert(foo);
+        Assert.assertEquals(jsonObject.get("id").getAsInt(), foo.getId());
     }
 
     @Test
-    public void testCanFetchKeyByPrimaryKey() throws IOException{
-        Foo foo = new Foo(43,"Dave");
-        documentProcessor.insert(foo);
+    public void testCanFetchKeyByPrimaryKey() throws IOException {
+        Foo foo = new Foo(43, "Dave");
+        documentProcessor().insert(foo);
 
-        Foo foo1 = documentProcessor.find(Foo.class,String.valueOf(foo.getId()));
+        Foo foo1 = documentProcessor().find(Foo.class, String.valueOf(foo.getId()));
 
-        Assert.assertEquals(foo.getId(),foo1.getId());
-        Assert.assertEquals(foo.getName(),foo1.getName());
+        Assert.assertEquals(foo.getId(), foo1.getId());
+        Assert.assertEquals(foo.getName(), foo1.getName());
+    }
+
+    @Test
+    public void testCanQueryByPredicates() throws IOException {
+
+        final List<Person> shortList = Person.createShortList();
+        for (Person person : shortList) {
+            documentProcessor().insert(person);
+        }
+
+        final List<Person> personsFromDB = documentProcessor().find(Person.class, new Predicate<Person>() {
+            @Override
+            public boolean apply(Person input) {
+                return input.getFirstName().startsWith("J");
+            }
+        });
+
+        for (Person person : personsFromDB) {
+            Assert.assertTrue(person.getFirstName().startsWith("J"));
+        }
+
+
     }
 }
 
-class Foo{
+class Foo {
     private int id;
     private String name;
 

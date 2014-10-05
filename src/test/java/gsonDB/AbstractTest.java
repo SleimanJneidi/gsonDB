@@ -1,5 +1,6 @@
 package gsonDB;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -16,9 +17,8 @@ public abstract class AbstractTest {
 
     public static final DB testDB = DB.getDB(folder.newFolder("TestDBFiles"));
 
-    @AfterClass
-    public static void cleanup() {
-
+    @After
+    public void cleanup() {
         File dbDir = testDB.getDbDir();
         for (File file : dbDir.listFiles()) {
             file.delete();

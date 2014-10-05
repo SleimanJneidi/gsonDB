@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class IndexProcessor implements AutoCloseable{
 
-    private static final Map<Class<?>,IndexProcessor> INDEX_HANDLERS = new ConcurrentHashMap<Class<?>, IndexProcessor>();
+    private static final Map<Class<?>,IndexProcessor> INDEX_HANDLERS = new ConcurrentHashMap<>();
 
     protected final DB db;
     protected final Class<?> entityType;

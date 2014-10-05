@@ -1,6 +1,7 @@
 package gsonDB.document;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import gsonDB.DB;
@@ -70,23 +71,30 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
 
     @Override
     public <T> List<T> findAll(Class<T> entityType) throws IOException {
-        List<T> all = new ArrayList<>();
+
+        return this.find(entityType,new Predicate<T>() {
+            @Override
+            public boolean apply(T input) {
+                return true;
+            }
+        });
+    }
+
+    @Override
+    public <T> List<T> find(Class<T> entityType, Predicate<T> predicate) throws IOException {
+        List<T> results = new ArrayList<>();
+
         try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
             reader.beginArray();
             while (reader.hasNext()) {
                 T object = gson.fromJson(reader, entityType);
-                all.add(object);
+                if(predicate.apply(object)) {
+                    results.add(object);
+                }
             }
             reader.endArray();
         }
-
-        return all;
-    }
-
-
-    @Override
-    public <T> List<T> findAll(Class<T> entityType, JsonElement query) {
-        return null;
+        return results;
     }
 
     @Override

@@ -9,6 +9,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -60,7 +61,7 @@ public abstract class DocumentProcessor implements AutoCloseable {
 
     public abstract <T> List<T> findAll(Class<T> entityType) throws IOException;
 
-    public abstract <T> List<T> findAll(Class<T> entityType, JsonElement query) throws IOException;
+    public abstract <T> List<T> find(Class<T> entityType, Predicate<T> predicate) throws IOException;
 
     public abstract <T> T find(Class<T> entityType, String id) throws IOException;
 

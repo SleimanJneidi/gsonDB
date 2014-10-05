@@ -21,7 +21,6 @@ public class IndexProcessorTest extends AbstractTest{
     public void testCanAddTypeToIndex() throws IOException {
         IndexProcessor indexProcessor = IndexProcessor.getIndexHandler(Person.class, testDB);
         Assert.assertEquals(Person.class, indexProcessor.getEntityType());
-        Assert.assertTrue(IndexProcessor.allIndexHandlers().size()==1);
         Assert.assertTrue(indexProcessor instanceof DefaultIndexProcessor);
     }
 
