@@ -23,7 +23,6 @@ public abstract class IndexProcessor implements AutoCloseable{
     protected final Class<?> entityType;
     protected final File file;
     protected final RandomAccessFile indexFile;
-    protected final Lock lock = new ReentrantLock();
 
     public static IndexProcessor getIndexHandler(final Class<?> type,final DB db) throws FileNotFoundException {
         Preconditions.checkNotNull(type,"Class shouldn't be null");

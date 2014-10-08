@@ -3,6 +3,7 @@ package gsonDB.index;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import gsonDB.DB;
+import gsonDB.utils.FileUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -10,11 +11,15 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by Sleiman on 03/10/2014.
  */
 public class DefaultIndexProcessor extends IndexProcessor {
+
+    private final Lock lock = new ReentrantLock();
 
     private static final int NUM_OF_RECORDS_FILE_POINTER = 0; // file's head
 
@@ -114,11 +119,29 @@ public class DefaultIndexProcessor extends IndexProcessor {
         this.indexFile.seek(KEY_TABLE_FILE_POINTER);
         for (int i = 0; i < count; i++) {
             IndexKeyEntry keyEntry = fetchNextIndexKeyEntry().get();
-            if(key.equals(keyEntry.getKey())){
+            if (key.equals(keyEntry.getKey())) {
                 return keyEntry;
             }
         }
         return null;
+    }
+
+    public void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException {
+        try {
+            this.lock.lock();
+
+            indexFile.seek(KEY_TABLE_FILE_POINTER);
+            long currentFilePointer;
+            while ((currentFilePointer = indexFile.getFilePointer()) <= (indexFile.length() + INDEX_KEY_ENTRY_SIZE)) {
+                IndexKeyEntry fetchedIndexedKeyEntry = fetchNextIndexKeyEntry().get();
+                if (indexKeyEntry.equals(fetchedIndexedKeyEntry)) {
+                    FileUtils.deleteBytes(indexFile, currentFilePointer, INDEX_KEY_ENTRY_SIZE);
+                    break;
+                }
+            }
+        }finally {
+            this.lock.unlock();
+        }
     }
 
     @Override

@@ -31,7 +31,6 @@ public abstract class DocumentProcessor implements AutoCloseable {
 
     protected final DB db;
 
-    protected final Lock lock = new ReentrantLock();
     protected final Gson gson = new Gson();
 
     protected DocumentProcessor(final Class<?> entityType, DB db) throws FileNotFoundException {
@@ -65,7 +64,7 @@ public abstract class DocumentProcessor implements AutoCloseable {
 
     public abstract <T> T find(Class<T> entityType, String id) throws IOException;
 
-    public abstract void delete(String id, Class<?> entityType) throws IOException;
+    public abstract void delete(Class<?> entityType, String id) throws IOException;
 
     public abstract void update(String id, Object newValue) throws IOException;
 
