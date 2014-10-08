@@ -9,11 +9,9 @@ import gsonDB.Person;
 import junit.framework.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 
 /**
@@ -21,7 +19,7 @@ import java.util.UUID;
  */
 public class DefaultDocumentProcessorTest extends AbstractTest {
 
-    private DocumentProcessor documentProcessor() throws FileNotFoundException {
+    private DocumentProcessor personDocumentProcessor() throws FileNotFoundException {
         return DocumentProcessor.getDocumentProcessor(Person.class, testDB);
     }
 
@@ -31,17 +29,17 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
 
         final List<Person> shortList = Person.createShortList();
         for (Person person : shortList) {
-            documentProcessor().insert(person);
+            personDocumentProcessor().insert(person);
         }
 
-        List<Person> fromDB = documentProcessor().findAll(Person.class);
+        List<Person> fromDB = personDocumentProcessor().findAll(Person.class);
         Assert.assertTrue(fromDB.size() == shortList.size());
     }
 
     @Test
     public void testCanGenerateKey() throws IOException {
         Person person = Person.createShortList().get(0);
-        JsonObject jsonObject = documentProcessor().insert(person);
+        JsonObject jsonObject = personDocumentProcessor().insert(person);
         String generatedKeyString = jsonObject.get("id").getAsString();
         UUID generatedKey = UUID.fromString(generatedKeyString);
         Assert.assertNotNull(generatedKey);
@@ -50,16 +48,16 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
     @Test
     public void testCanUseProvidedKey() throws IOException {
         Foo foo = new Foo(43, "Dave");
-        JsonObject jsonObject = documentProcessor().insert(foo);
+        JsonObject jsonObject = personDocumentProcessor().insert(foo);
         Assert.assertEquals(jsonObject.get("id").getAsInt(), foo.getId());
     }
 
     @Test
     public void testCanFetchKeyByPrimaryKey() throws IOException {
         Foo foo = new Foo(43, "Dave");
-        documentProcessor().insert(foo);
+        personDocumentProcessor().insert(foo);
 
-        Foo foo1 = documentProcessor().find(Foo.class, String.valueOf(foo.getId()));
+        Foo foo1 = personDocumentProcessor().find(Foo.class, String.valueOf(foo.getId()));
 
         Assert.assertEquals(foo.getId(), foo1.getId());
         Assert.assertEquals(foo.getName(), foo1.getName());
@@ -70,10 +68,10 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
 
         final List<Person> shortList = Person.createShortList();
         for (Person person : shortList) {
-            documentProcessor().insert(person);
+            personDocumentProcessor().insert(person);
         }
 
-        final List<Person> personsFromDB = documentProcessor().find(Person.class, new Predicate<Person>() {
+        final List<Person> personsFromDB = personDocumentProcessor().find(Person.class, new Predicate<Person>() {
             @Override
             public boolean apply(Person input) {
                 return input.getFirstName().startsWith("J");
@@ -90,7 +88,7 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
     public void testCanQueryCompositePredicate() throws IOException{
         final List<Person> shortList = Person.createShortList();
         for (Person person : shortList) {
-            documentProcessor().insert(person);
+            personDocumentProcessor().insert(person);
         }
 
         Predicate<Person> startsWithJ = new Predicate<Person>() {
@@ -106,12 +104,59 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
             }
         };
 
-        final List<Person> personsFromDB = documentProcessor().find(Person.class,Predicates.and(startsWithJ,isMale));
+        final List<Person> personsFromDB = personDocumentProcessor().find(Person.class, Predicates.and(startsWithJ, isMale));
 
         for (Person person : personsFromDB) {
             Assert.assertTrue(person.getFirstName().startsWith("J") && person.getGender() == Gender.MALE);
         }
     }
+
+    @Test
+    public void testCanDeleteRecordFromTheMiddle()throws IOException{
+        DocumentProcessor fooDocumentProcessor = DocumentProcessor.getDocumentProcessor(Foo.class,testDB);
+
+        Foo foo1 = new Foo(1,"foo1");
+        fooDocumentProcessor.insert(foo1);
+
+        Foo foo2 = new Foo(2,"foo2");
+        fooDocumentProcessor.insert(foo2);
+
+        Foo foo3 = new Foo(3,"foo3");
+        fooDocumentProcessor.insert(foo3);
+
+        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 3);
+
+        fooDocumentProcessor.delete(Foo.class, "2");
+
+        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 2);
+
+    }
+
+    @Test
+    public void testCanDeleteRecordFromTheEnd()throws IOException{
+
+        DocumentProcessor fooDocumentProcessor = DocumentProcessor.getDocumentProcessor(Foo.class,testDB);
+
+        Foo foo1 = new Foo(1,"foo1");
+        fooDocumentProcessor.insert(foo1);
+
+        Foo foo2 = new Foo(2,"foo2");
+        fooDocumentProcessor.insert(foo2);
+
+        Foo foo3 = new Foo(3,"foo3");
+        fooDocumentProcessor.insert(foo3);
+
+        fooDocumentProcessor.findAll(Foo.class);
+        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 3);
+
+        fooDocumentProcessor.delete(Foo.class, "3");
+
+        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 2);
+
+    }
+
+
+
 }
 
 class Foo {
