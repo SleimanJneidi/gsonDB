@@ -27,11 +27,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by Sleiman on 02/10/2014.
  */
 
-public class DefaultDocumentProcessor extends DocumentProcessor {
+public class DefaultDocumentProcessor extends BasicDocumentProcessor {
 
     public static final String DEFAULT_ID_NAME = "id";
-
-    private final Lock lock = new ReentrantLock();
 
     protected DefaultDocumentProcessor(Class<?> entityType, DB db) throws FileNotFoundException {
         super(entityType, db);
@@ -76,78 +74,33 @@ public class DefaultDocumentProcessor extends DocumentProcessor {
 
     @Override
     public <T> List<T> findAll(Class<T> entityType) throws IOException {
-
-        return this.find(entityType, new Predicate<T>() {
-            @Override
-            public boolean apply(T input) {
-                return true;
-            }
-        });
+        return super.findAll(entityType);
     }
 
     @Override
     public <T> List<T> find(Class<T> entityType, Predicate<T> predicate) throws IOException {
-        List<T> results = new ArrayList<>();
-
-        try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
-            reader.setLenient(true);
-            while (reader.peek() != JsonToken.END_DOCUMENT) {
-                T object = gson.fromJson(reader, entityType);
-                if (predicate.apply(object)) {
-                    results.add(object);
-                }
-            }
-        }
-        return results;
+        return super.find(entityType, predicate);
     }
 
     @Override
     public <T> T find(Class<T> entityType, String id) throws IOException {
-        DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
-        IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
-        if (indexKeyEntry == null)
-            return null;
-        try {
-            this.lock.lock();
-            long filePointer = indexKeyEntry.getDataFilePointer();
-            int recordSize = indexKeyEntry.getRecordSize();
-            byte[] buffer = new byte[recordSize];
-            dataFile.seek(filePointer);
-            dataFile.readFully(buffer);
-            String json = new String(buffer, "UTF-8");
-            T object = gson.fromJson(json, entityType);
-            return object;
-
-        } finally {
-            this.lock.unlock();
-        }
+        return super.find(entityType,id);
     }
+
 
     @Override
     public void delete(Class<?> entityType, String id) throws IOException {
+        super.delete(entityType,id);
+    }
+
+    @Override
+    public void update(String id, Object newValue) throws IOException {
         DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
         IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
         if (indexKeyEntry == null) {
             return;
         }
-        FileUtils.deleteBytes(dataFile, indexKeyEntry.getDataFilePointer(), indexKeyEntry.getRecordSize());
-        indexProcessor.deleteIndexKeyEntry(indexKeyEntry);
-
     }
-
-    @Override
-    public void update(String id, Object newValue) {
-
-    }
-
-    protected long writeDocument(byte[] json) throws IOException {
-        long filePointer;
-        dataFile.seek(dataFile.length());
-        filePointer = dataFile.getFilePointer();
-        dataFile.write(json);
-        return filePointer;
-    }
-
 
     @Override
     public void close() throws Exception {
