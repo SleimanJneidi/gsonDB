@@ -25,8 +25,4 @@ public class DB {
         return dbDir;
     }
 
-    public void insert(Object object){
-
-    }
-
 }

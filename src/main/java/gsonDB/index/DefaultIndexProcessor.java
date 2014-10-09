@@ -87,6 +87,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
         return indexKeyEntries;
     }
 
+    @Override
     public void insertNewIndexEntry(IndexKeyEntry indexKeyEntry) throws IOException {
         Preconditions.checkNotNull(indexKeyEntry);
         try {
@@ -113,6 +114,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
         this.indexFile.writeInt(newNumberOfRecords);
     }
 
+    @Override
     public IndexKeyEntry getIndexByKey(String key) throws IOException {
         Preconditions.checkNotNull(key);
         int count = this.count();
@@ -126,16 +128,19 @@ public class DefaultIndexProcessor extends IndexProcessor {
         return null;
     }
 
+    @Override
     public void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException {
         try {
             this.lock.lock();
-
+            int currentCount = count();
             indexFile.seek(KEY_TABLE_FILE_POINTER);
             long currentFilePointer;
             while ((currentFilePointer = indexFile.getFilePointer()) <= (indexFile.length() + INDEX_KEY_ENTRY_SIZE)) {
                 IndexKeyEntry fetchedIndexedKeyEntry = fetchNextIndexKeyEntry().get();
                 if (indexKeyEntry.equals(fetchedIndexedKeyEntry)) {
                     FileUtils.deleteBytes(indexFile, currentFilePointer, INDEX_KEY_ENTRY_SIZE);
+                    currentCount--;
+                    updateNumberOfRecords(currentCount);
                     break;
                 }
             }

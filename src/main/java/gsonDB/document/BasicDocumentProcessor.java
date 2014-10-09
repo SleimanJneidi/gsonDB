@@ -6,6 +6,7 @@ import com.google.gson.stream.JsonToken;
 import gsonDB.DB;
 import gsonDB.index.DefaultIndexProcessor;
 import gsonDB.index.IndexKeyEntry;
+import gsonDB.index.IndexProcessor;
 import gsonDB.utils.FileUtils;
 
 import java.io.FileInputStream;
@@ -30,7 +31,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor{
 
 
     @Override
-    public <T> T find(Class<T> entityType, String id) throws IOException {
+    public <T> T find(String id, Class<T> entityType) throws IOException {
         DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
         IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
         if (indexKeyEntry == null)
@@ -79,14 +80,22 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor{
     }
 
     @Override
-    public void delete(Class<?> entityType, String id) throws IOException {
+    public void update(String id, Object newValue) throws IOException {
         DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
         IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
         if (indexKeyEntry == null) {
             return;
         }
-        FileUtils.deleteBytes(dataFile, indexKeyEntry.getDataFilePointer(), indexKeyEntry.getRecordSize());
-        indexProcessor.deleteIndexKeyEntry(indexKeyEntry);
+    }
+
+    @Override
+    public void delete(String id, Class<?> entityType) throws IOException {
+        IndexProcessor indexProcessor = IndexProcessor.getIndexHandler(entityType, db);
+        IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
+        if (indexKeyEntry == null) {
+            return;
+        }
+        deleteRecord(indexProcessor,indexKeyEntry);
     }
 
     protected long writeDocument(byte[] json) throws IOException {
@@ -97,4 +106,8 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor{
         return filePointer;
     }
 
+    protected void deleteRecord(IndexProcessor indexProcessor, IndexKeyEntry indexKeyEntry) throws IOException{
+        FileUtils.deleteBytes(dataFile, indexKeyEntry.getDataFilePointer(), indexKeyEntry.getRecordSize());
+        indexProcessor.deleteIndexKeyEntry(indexKeyEntry);
+    }
 }

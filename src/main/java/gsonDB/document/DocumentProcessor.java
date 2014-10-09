@@ -62,9 +62,9 @@ public abstract class DocumentProcessor implements AutoCloseable {
 
     public abstract <T> List<T> find(Class<T> entityType, Predicate<T> predicate) throws IOException;
 
-    public abstract <T> T find(Class<T> entityType, String id) throws IOException;
+    public abstract <T> T find(String id, Class<T> entityType) throws IOException;
 
-    public abstract void delete(Class<?> entityType, String id) throws IOException;
+    public abstract void delete(String id, Class<?> entityType) throws IOException;
 
     public abstract void update(String id, Object newValue) throws IOException;
 

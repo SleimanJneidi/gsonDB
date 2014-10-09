@@ -48,6 +48,10 @@ public abstract class IndexProcessor implements AutoCloseable{
 
     public abstract void insertNewIndexEntry(IndexKeyEntry indexKeyEntry) throws IOException;
 
+    public abstract void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException;
+
+    public abstract IndexKeyEntry getIndexByKey(String id) throws IOException;
+
     public static Map<Class<?>, IndexProcessor> allIndexHandlers(){
         return Collections.unmodifiableMap(INDEX_HANDLERS);
     }
