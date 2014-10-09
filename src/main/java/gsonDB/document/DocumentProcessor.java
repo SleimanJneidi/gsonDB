@@ -24,7 +24,10 @@ import gsonDB.index.IndexKeyEntry;
  */
 public abstract class DocumentProcessor implements AutoCloseable {
 
+    public static final String DEFAULT_ID_NAME = "id";
+
     protected final RandomAccessFile dataFile;
+
     protected final File file;
 
     protected final Class<?> entityType;

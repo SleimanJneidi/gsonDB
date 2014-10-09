@@ -1,9 +1,14 @@
 package gsonDB.document;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import gsonDB.DB;
+import gsonDB.LongKeyException;
 import gsonDB.index.DefaultIndexProcessor;
 import gsonDB.index.IndexKeyEntry;
 import gsonDB.index.IndexProcessor;
@@ -15,13 +20,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by Sleiman on 08/10/2014.
  */
-public abstract class BasicDocumentProcessor extends DocumentProcessor{
+public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
     protected final Lock lock = new ReentrantLock();
 
@@ -65,8 +71,8 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor{
 
     @Override
     public <T> List<T> find(Class<T> entityType, Predicate<T> predicate) throws IOException {
-        List<T> results = new ArrayList<>();
 
+        List<T> results = new ArrayList<>();
         try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
             reader.setLenient(true);
             while (reader.peek() != JsonToken.END_DOCUMENT) {
@@ -95,19 +101,38 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor{
         if (indexKeyEntry == null) {
             return;
         }
-        deleteRecord(indexProcessor,indexKeyEntry);
+        deleteRecord(indexProcessor, indexKeyEntry);
     }
 
-    protected long writeDocument(byte[] json) throws IOException {
+    protected long writeDocument(byte[] buffer) throws IOException {
         long filePointer;
         dataFile.seek(dataFile.length());
         filePointer = dataFile.getFilePointer();
-        dataFile.write(json);
+        dataFile.write(buffer);
         return filePointer;
     }
 
-    protected void deleteRecord(IndexProcessor indexProcessor, IndexKeyEntry indexKeyEntry) throws IOException{
+    protected void deleteRecord(IndexProcessor indexProcessor, IndexKeyEntry indexKeyEntry) throws IOException {
         FileUtils.deleteBytes(dataFile, indexKeyEntry.getDataFilePointer(), indexKeyEntry.getRecordSize());
         indexProcessor.deleteIndexKeyEntry(indexKeyEntry);
+    }
+
+    protected JsonObject toJson(Object object) {
+        Preconditions.checkNotNull(object, "Inserted object shouldn't be null");
+        Gson gson = new Gson();
+        JsonObject jsonObject = gson.toJsonTree(object).getAsJsonObject();
+        JsonElement jsonIdElement = jsonObject.get(DEFAULT_ID_NAME);
+        String id = null;
+        if (jsonIdElement != null) {
+            id = jsonIdElement.getAsString();
+        }
+
+        if (jsonIdElement != null && id.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
+            throw new LongKeyException();
+        } else if (jsonIdElement == null) { // generate key for the document
+            id = UUID.randomUUID().toString();
+            jsonObject.addProperty(DEFAULT_ID_NAME, id);
+        }
+        return jsonObject;
     }
 }
