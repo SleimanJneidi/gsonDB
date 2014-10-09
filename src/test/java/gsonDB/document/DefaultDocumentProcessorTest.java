@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.gson.JsonObject;
 import gsonDB.AbstractTest;
+import gsonDB.Foo;
 import gsonDB.Gender;
 import gsonDB.Person;
 import junit.framework.Assert;
@@ -57,7 +58,7 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
         Foo foo = new Foo(43, "Dave");
         personDocumentProcessor().insert(foo);
 
-        Foo foo1 = personDocumentProcessor().find(Foo.class, String.valueOf(foo.getId()));
+        Foo foo1 = personDocumentProcessor().find(String.valueOf(foo.getId()), Foo.class);
 
         Assert.assertEquals(foo.getId(), foo1.getId());
         Assert.assertEquals(foo.getName(), foo1.getName());
@@ -111,68 +112,6 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
         }
     }
 
-    @Test
-    public void testCanDeleteRecordFromTheMiddle()throws IOException{
-        DocumentProcessor fooDocumentProcessor = DocumentProcessor.getDocumentProcessor(Foo.class,testDB);
-
-        Foo foo1 = new Foo(1,"foo1");
-        fooDocumentProcessor.insert(foo1);
-
-        Foo foo2 = new Foo(2,"foo2");
-        fooDocumentProcessor.insert(foo2);
-
-        Foo foo3 = new Foo(3,"foo3");
-        fooDocumentProcessor.insert(foo3);
-
-        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 3);
-
-        fooDocumentProcessor.delete(Foo.class, "2");
-
-        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 2);
-
-    }
-
-    @Test
-    public void testCanDeleteRecordFromTheEnd()throws IOException{
-
-        DocumentProcessor fooDocumentProcessor = DocumentProcessor.getDocumentProcessor(Foo.class,testDB);
-
-        Foo foo1 = new Foo(1,"foo1");
-        fooDocumentProcessor.insert(foo1);
-
-        Foo foo2 = new Foo(2,"foo2");
-        fooDocumentProcessor.insert(foo2);
-
-        Foo foo3 = new Foo(3,"foo3");
-        fooDocumentProcessor.insert(foo3);
-
-        fooDocumentProcessor.findAll(Foo.class);
-        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 3);
-
-        fooDocumentProcessor.delete(Foo.class, "3");
-
-        Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 2);
-
-    }
-
-
 
 }
 
-class Foo {
-    private int id;
-    private String name;
-
-    Foo(int id, String name) {
-        this.id = id;
-        this.name = name;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-}
