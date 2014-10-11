@@ -42,7 +42,7 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
         Person person = Person.createShortList().get(0);
         JsonObject jsonObject = personDocumentProcessor().insert(person);
         String generatedKeyString = jsonObject.get("id").getAsString();
-        UUID generatedKey = UUID.fromString(generatedKeyString);
+        Long generatedKey = Long.parseLong(generatedKeyString);
         Assert.assertNotNull(generatedKey);
     }
 
