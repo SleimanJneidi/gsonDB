@@ -43,7 +43,7 @@ public abstract class IndexProcessor implements AutoCloseable{
         this.indexFile = new RandomAccessFile(this.file,"rw");
     }
 
-    public abstract int count() throws IOException;
+    public abstract long count() throws IOException;
 
     public abstract void insertNewIndexEntry(IndexKeyEntry indexKeyEntry) throws IOException;
 

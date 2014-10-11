@@ -4,10 +4,8 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import gsonDB.DB;
-import gsonDB.GsonDB;
 import gsonDB.utils.FileUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -24,10 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DefaultIndexProcessor extends IndexProcessor {
 
     private final Lock lock = new ReentrantLock();
-
-    private static final int NUM_OF_RECORDS_FILE_POINTER = 0; // file's head
-
-    private static final int KEY_TABLE_FILE_POINTER = 4; // 4 bytes after the number of records
+    private static final int KEY_TABLE_FILE_POINTER = 0; // 4 bytes after the number of records
     public static final int KEY_SIZE = 36; // 36 bytes
     protected static final int FILE_POINTER_SIZE = 8; // long value
     private static final int RECORD_LENGTH_SIZE = 4; // integer value
@@ -39,22 +34,8 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
 
     @Override
-    public int count() throws IOException {
-        int numberOfRecords = fetchNumberOfRecords();
-        return numberOfRecords == -1 ? 0 : numberOfRecords;
-    }
-
-    /**
-     * @return number of records in the current index file, returns -1 of the file is empty
-     * @throws java.io.IOException
-     */
-    private int fetchNumberOfRecords() throws IOException {
-        if (this.indexFile.length() == 0) { // nothing to read
-            return -1; // file is empty
-        }
-        this.indexFile.seek(NUM_OF_RECORDS_FILE_POINTER);
-        int numberOfRecords = this.indexFile.readInt();
-        return numberOfRecords;
+    public long count() throws IOException {
+        return indexFile.length() / INDEX_KEY_ENTRY_SIZE;
     }
 
     private Supplier<IndexKeyEntry> fetchNextIndexKeyEntry() {
@@ -80,26 +61,11 @@ public class DefaultIndexProcessor extends IndexProcessor {
         return indexKeyEntrySupplier;
     }
 
-    protected List<IndexKeyEntry> allIndexEntries() throws IOException {
-        final int numberOfRecords = this.count();
-        List<IndexKeyEntry> indexKeyEntries = new ArrayList<>(numberOfRecords);
-        this.indexFile.seek(KEY_TABLE_FILE_POINTER);
-
-        for (int i = 0; i < numberOfRecords; i++) {
-            indexKeyEntries.add(this.fetchNextIndexKeyEntry().get());
-        }
-        return indexKeyEntries;
-    }
-
     @Override
     public void insertNewIndexEntry(IndexKeyEntry indexKeyEntry) throws IOException {
         Preconditions.checkNotNull(indexKeyEntry);
         try {
             lock.lock();
-            int numberOfRecords = count();
-            numberOfRecords++;
-            updateNumberOfRecords(numberOfRecords);
-
             this.indexFile.seek(this.indexFile.length());
             ByteBuffer keyByteBuffer = ByteBuffer.allocate(KEY_SIZE).put(indexKeyEntry.getKey().getBytes());
             byte[] keyBuffer = keyByteBuffer.array();
@@ -110,12 +76,6 @@ public class DefaultIndexProcessor extends IndexProcessor {
         } finally {
             lock.unlock();
         }
-    }
-
-    private void updateNumberOfRecords(int newNumberOfRecords) throws IOException {
-        Preconditions.checkArgument(newNumberOfRecords >= 0);
-        this.indexFile.seek(NUM_OF_RECORDS_FILE_POINTER);
-        this.indexFile.writeInt(newNumberOfRecords);
     }
 
     @Override
@@ -141,15 +101,13 @@ public class DefaultIndexProcessor extends IndexProcessor {
     public void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException {
         try {
             this.lock.lock();
-            int currentCount = count();
+            long currentCount = count();
             indexFile.seek(KEY_TABLE_FILE_POINTER);
             long currentFilePointer;
             while ((currentFilePointer = indexFile.getFilePointer()) <= (indexFile.length() + INDEX_KEY_ENTRY_SIZE)) {
                 IndexKeyEntry fetchedIndexedKeyEntry = fetchNextIndexKeyEntry().get();
                 if (indexKeyEntry.equals(fetchedIndexedKeyEntry)) {
                     FileUtils.deleteBytes(indexFile, currentFilePointer, INDEX_KEY_ENTRY_SIZE);
-                    currentCount--;
-                    updateNumberOfRecords(currentCount);
                     break;
                 }
             }
@@ -182,7 +140,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
     private class IndexKeyEntryIterator implements Iterator<IndexKeyEntry> {
         int current = 0;
-        int size;
+        long size;
 
         IndexKeyEntryIterator() {
             try {
