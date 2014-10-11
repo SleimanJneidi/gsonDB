@@ -1,23 +1,14 @@
 package gsonDB.document;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import gsonDB.DB;
-import gsonDB.LongKeyException;
-import gsonDB.index.DefaultIndexProcessor;
-import gsonDB.index.IndexProcessor;
-import gsonDB.index.IndexKeyEntry;
+import gsonDB.GsonDB;
 
 /**
  * @author Sleiman
@@ -41,7 +32,7 @@ public abstract class DocumentProcessor implements AutoCloseable {
         this.db = db;
         this.entityType = entityType;
         String documentFileName = entityType.getSimpleName() + "_data";
-        this.file = new File(db.getDbDir(), documentFileName);
+        this.file = new File(db.getDBDir(), documentFileName);
         this.dataFile = new RandomAccessFile(file, "rw");
 
     }

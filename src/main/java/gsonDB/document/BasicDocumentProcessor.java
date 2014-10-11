@@ -8,11 +8,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import gsonDB.DB;
+import gsonDB.GsonDB;
 import gsonDB.LongKeyException;
 import gsonDB.index.DefaultIndexProcessor;
 import gsonDB.index.IndexKeyEntry;
 import gsonDB.index.IndexProcessor;
 import gsonDB.utils.FileUtils;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,16 +22,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by Sleiman on 08/10/2014.
  */
 public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
-    protected final Lock lock = new ReentrantLock();
+    protected final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     protected BasicDocumentProcessor(Class<?> entityType, DB db) throws FileNotFoundException {
         super(entityType, db);
@@ -43,7 +44,8 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
         if (indexKeyEntry == null)
             return null;
         try {
-            this.lock.lock();
+            this.lock.readLock().lock();
+
             long filePointer = indexKeyEntry.getDataFilePointer();
             int recordSize = indexKeyEntry.getRecordSize();
             byte[] buffer = new byte[recordSize];
@@ -54,7 +56,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
             return object;
 
         } finally {
-            this.lock.unlock();
+            this.lock.readLock().unlock();
         }
     }
 
@@ -87,11 +89,11 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
     @Override
     public void update(String id, Object newValue) throws IOException {
+        /*
         DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
         IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
-        if (indexKeyEntry == null) {
-            return;
-        }
+        */
+        throw new NotImplementedException();
     }
 
     @Override
@@ -101,7 +103,12 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
         if (indexKeyEntry == null) {
             return;
         }
-        deleteRecord(indexProcessor, indexKeyEntry);
+        try {
+            this.lock.writeLock().lock();
+            deleteRecord(indexProcessor, indexKeyEntry);
+        }finally {
+            this.lock.writeLock().unlock();
+        }
     }
 
     protected long writeDocument(byte[] buffer) throws IOException {
@@ -130,7 +137,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
         if (jsonIdElement != null && id.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
             throw new LongKeyException();
         } else if (jsonIdElement == null) { // generate key for the document
-            id = UUID.randomUUID().toString();
+            id = String.valueOf(System.nanoTime());
             jsonObject.addProperty(DEFAULT_ID_NAME, id);
         }
         return jsonObject;

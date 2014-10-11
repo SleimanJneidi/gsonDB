@@ -2,6 +2,8 @@ package gsonDB.index;
 
 import com.google.common.base.Preconditions;
 import gsonDB.DB;
+import gsonDB.GsonDB;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,8 +11,6 @@ import java.io.RandomAccessFile;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by Sleiman on 28/09/2014.
@@ -40,7 +40,7 @@ public abstract class IndexProcessor implements AutoCloseable{
         this.db = db;
         this.entityType = entityType;
         final String indexFileName = entityType.getSimpleName()+ "_index";
-        this.file = new File(db.getDbDir(),indexFileName);
+        this.file = new File(db.getDBDir(),indexFileName);
         this.indexFile = new RandomAccessFile(this.file,"rw");
     }
 
@@ -56,7 +56,7 @@ public abstract class IndexProcessor implements AutoCloseable{
         return Collections.unmodifiableMap(INDEX_HANDLERS);
     }
 
-    public DB getDb() {
+    public DB getDB() {
         return db;
     }
 
