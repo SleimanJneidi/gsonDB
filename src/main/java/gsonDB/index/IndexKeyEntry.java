@@ -9,23 +9,31 @@ import gsonDB.LongKeyException;
  * Created by Sleiman on 28/09/2014.
  */
 
-public class IndexKeyEntry {
+public final class IndexKeyEntry {
 
     private final String key;
     private final long dataFilePointer;
     private final int recordSize;
 
+    private final long indexEntryFilePointer;
+
+
     public IndexKeyEntry(final String key, final long dataFilePointer, final int recordSize) {
+        this(key, dataFilePointer, recordSize, -1);
+    }
+
+    public IndexKeyEntry(final String key, final long dataFilePointer, final int recordSize, final long indexEntryFilePointer) {
 
         Preconditions.checkNotNull(key, "Key cannot be null");
         Preconditions.checkArgument(dataFilePointer >= 0);
         Preconditions.checkArgument(recordSize > 0);
-        if(key.getBytes().length > DefaultIndexProcessor.KEY_SIZE){
+        if (key.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
             throw new LongKeyException();
         }
         this.key = key;
         this.dataFilePointer = dataFilePointer;
         this.recordSize = recordSize;
+        this.indexEntryFilePointer = indexEntryFilePointer;
     }
 
     public String getKey() {
@@ -40,6 +48,14 @@ public class IndexKeyEntry {
         return recordSize;
     }
 
+    public IndexKeyEntry setIndexEntryFilePointer(long indexEntryFilePointer) {
+        return new IndexKeyEntry(this.key, this.dataFilePointer, this.recordSize, indexEntryFilePointer);
+    }
+
+    public long getIndexEntryFilePointer() {
+        return indexEntryFilePointer;
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -50,8 +66,8 @@ public class IndexKeyEntry {
     }
 
     @Override
-    public int hashCode(){
-        return Objects.hashCode(this.key,this.dataFilePointer,this.recordSize);
+    public int hashCode() {
+        return Objects.hashCode(this.key, this.dataFilePointer, this.recordSize);
     }
 
     @Override

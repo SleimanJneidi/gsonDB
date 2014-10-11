@@ -45,12 +45,13 @@ public class DefaultIndexProcessor extends IndexProcessor {
                 IndexKeyEntry indexKeyEntry = null;
                 byte[] keyBuffer = new byte[KEY_SIZE];
                 try {
+                    long indexFilePointer = indexFile.getFilePointer();
                     indexFile.readFully(keyBuffer);
                     String key = new String(keyBuffer);
                     key = key.trim(); // the key is often less than 36 bytes
-                    long filePointer = indexFile.readLong();
+                    long recordFilePointer = indexFile.readLong();
                     int recordSize = indexFile.readInt();
-                    indexKeyEntry = new IndexKeyEntry(key, filePointer, recordSize);
+                    indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
                     return indexKeyEntry;
                 } catch (IOException e) {
                     e.printStackTrace(); //FIXME
@@ -101,15 +102,11 @@ public class DefaultIndexProcessor extends IndexProcessor {
     public void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException {
         try {
             this.lock.lock();
-            long currentCount = count();
-            indexFile.seek(KEY_TABLE_FILE_POINTER);
-            long currentFilePointer;
-            while ((currentFilePointer = indexFile.getFilePointer()) <= (indexFile.length() + INDEX_KEY_ENTRY_SIZE)) {
-                IndexKeyEntry fetchedIndexedKeyEntry = fetchNextIndexKeyEntry().get();
-                if (indexKeyEntry.equals(fetchedIndexedKeyEntry)) {
-                    FileUtils.deleteBytes(indexFile, currentFilePointer, INDEX_KEY_ENTRY_SIZE);
-                    break;
-                }
+
+            final Optional<IndexKeyEntry> resultOptional = tryFindIndex(indexKeyEntry.getKey());
+            if (resultOptional.isPresent()) {
+                IndexKeyEntry result = resultOptional.get();
+                FileUtils.deleteBytes(indexFile, result.getIndexEntryFilePointer(), INDEX_KEY_ENTRY_SIZE);
             }
         } finally {
             this.lock.unlock();
