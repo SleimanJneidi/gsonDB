@@ -91,11 +91,17 @@ public class DefaultIndexProcessor extends IndexProcessor {
         Preconditions.checkNotNull(newIndexKeyEntry);
         Preconditions.checkNotNull(newIndexKeyEntry.getKey());
 
-        Optional<IndexKeyEntry> oldIndexKeyEntry = tryFindIndex(newIndexKeyEntry.getKey());
-        if (!oldIndexKeyEntry.isPresent()) {
+        Optional<IndexKeyEntry> oldIndexKeyEntryOptional = tryFindIndex(newIndexKeyEntry.getKey());
+        if (!oldIndexKeyEntryOptional.isPresent()) {
             throw new RuntimeException("Index key entry does not exist");
         }
-        return oldIndexKeyEntry.get();
+        IndexKeyEntry oldIndexKeyEntry = oldIndexKeyEntryOptional.get();
+        // write record length and file pointer
+        indexFile.seek(oldIndexKeyEntry.getIndexEntryFilePointer() + KEY_SIZE);
+        indexFile.writeLong(newIndexKeyEntry.getDataFilePointer());
+        indexFile.writeInt(newIndexKeyEntry.getRecordSize());
+
+        return newIndexKeyEntry.setIndexEntryFilePointer(oldIndexKeyEntry.getIndexEntryFilePointer());
     }
 
     @Override

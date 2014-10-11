@@ -22,5 +22,6 @@ public abstract class AbstractTest {
         for (File file : dbDir.listFiles()) {
             file.delete();
         }
+
     }
 }

@@ -27,4 +27,9 @@ public class GsonDB implements DB {
     public File getDBDir() {
         return dbDir;
     }
+
+    @Override
+    public long size() {
+        return 0;
+    }
 }

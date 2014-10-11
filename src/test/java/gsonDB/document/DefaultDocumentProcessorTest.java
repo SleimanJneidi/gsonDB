@@ -7,6 +7,7 @@ import gsonDB.AbstractTest;
 import gsonDB.Foo;
 import gsonDB.Gender;
 import gsonDB.Person;
+import gsonDB.index.IndexProcessor;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -86,7 +87,7 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
     }
 
     @Test
-    public void testCanQueryCompositePredicate() throws IOException{
+    public void testCanQueryCompositePredicate() throws IOException {
         final List<Person> shortList = Person.createShortList();
         for (Person person : shortList) {
             personDocumentProcessor().insert(person);
@@ -95,7 +96,7 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
         Predicate<Person> startsWithJ = new Predicate<Person>() {
             @Override
             public boolean apply(Person input) {
-              return input.getFirstName().startsWith("J");
+                return input.getFirstName().startsWith("J");
             }
         };
         Predicate<Person> isMale = new Predicate<Person>() {

@@ -3,6 +3,7 @@ package gsonDB.index;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import gsonDB.AbstractTest;
+import gsonDB.Foo;
 import gsonDB.LongKeyException;
 import gsonDB.Person;
 import junit.framework.Assert;
@@ -31,7 +32,7 @@ public class DefaultIndexProcessorTest extends AbstractTest {
                 processor.insertNewIndexEntry(indexKeyEntry);
             }
 
-            Assert.assertEquals(processor.count(), mockedIndexEntries.size());
+            Assert.assertEquals(mockedIndexEntries.size(), processor.count());
 
         }
 
@@ -40,6 +41,29 @@ public class DefaultIndexProcessorTest extends AbstractTest {
     @Test(expected = LongKeyException.class)
     public void testShouldThrowLongKeyException() {
         new IndexKeyEntry(UUID.randomUUID().toString() + "Add Something Extra", 70, 18);
+    }
+
+    @Test
+    public void testCanUpdateIndex() throws Exception {
+
+        DefaultIndexProcessor processor = new DefaultIndexProcessor(Person.class, this.testDB);
+        List<IndexKeyEntry> mockedIndexEntries = mockedIndexEntries();
+
+        for (IndexKeyEntry indexKeyEntry : mockedIndexEntries) {
+            processor.insertNewIndexEntry(indexKeyEntry);
+        }
+
+        IndexKeyEntry currentIndexByKey = processor.getIndexByKey("someId");
+
+        Assert.assertNotNull(currentIndexByKey);
+
+        IndexKeyEntry newIndexKeyEntry = new IndexKeyEntry("someId", 90, 95);
+        processor.updateIndexKeyEntry(newIndexKeyEntry);
+
+        currentIndexByKey = processor.getIndexByKey("someId");
+        Assert.assertEquals(90,currentIndexByKey.getDataFilePointer());
+        Assert.assertEquals(95,currentIndexByKey.getRecordSize());
+
     }
 
     private List<IndexKeyEntry> mockedIndexEntries() {
@@ -51,6 +75,5 @@ public class DefaultIndexProcessorTest extends AbstractTest {
         return Arrays.asList(indexKeyEntry, indexKeyEntry1, indexKeyEntry2, indexKeyEntry3, indexKeyEntry4);
 
     }
-
 
 }

@@ -1,6 +1,8 @@
 package gsonDB;
 
-public class Foo {
+import java.io.Serializable;
+
+public class Foo{
     private int id;
     private String name;
 

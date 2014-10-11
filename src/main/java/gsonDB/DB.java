@@ -7,4 +7,5 @@ import java.io.File;
  */
 public interface DB {
     File getDBDir();
+    long size();
 }
