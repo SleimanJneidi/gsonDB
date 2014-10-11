@@ -1,10 +1,15 @@
 package gsonDB.index;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
 import gsonDB.DB;
 import gsonDB.GsonDB;
 import gsonDB.utils.FileUtils;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,12 +37,12 @@ public class DefaultIndexProcessor extends IndexProcessor {
         super(entityType, db);
     }
 
+
     @Override
     public int count() throws IOException {
         int numberOfRecords = fetchNumberOfRecords();
         return numberOfRecords == -1 ? 0 : numberOfRecords;
     }
-
 
     /**
      * @return number of records in the current index file, returns -1 of the file is empty
@@ -116,15 +121,20 @@ public class DefaultIndexProcessor extends IndexProcessor {
     @Override
     public IndexKeyEntry getIndexByKey(String key) throws IOException {
         Preconditions.checkNotNull(key);
-        int count = this.count();
-        this.indexFile.seek(KEY_TABLE_FILE_POINTER);
-        for (int i = 0; i < count; i++) {
-            IndexKeyEntry keyEntry = fetchNextIndexKeyEntry().get();
-            if (key.equals(keyEntry.getKey())) {
-                return keyEntry;
-            }
+        Optional<IndexKeyEntry> indexKeyEntry = tryFindIndex(key);
+        return indexKeyEntry.isPresent() ? indexKeyEntry.get() : null;
+    }
+
+    @Override
+    public IndexKeyEntry updateIndexKeyEntry(final IndexKeyEntry newIndexKeyEntry) throws IOException {
+        Preconditions.checkNotNull(newIndexKeyEntry);
+        Preconditions.checkNotNull(newIndexKeyEntry.getKey());
+
+        Optional<IndexKeyEntry> oldIndexKeyEntry = tryFindIndex(newIndexKeyEntry.getKey());
+        if (!oldIndexKeyEntry.isPresent()) {
+            throw new RuntimeException("Index key entry does not exist");
         }
-        return null;
+        return oldIndexKeyEntry.get();
     }
 
     @Override
@@ -143,7 +153,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
                     break;
                 }
             }
-        }finally {
+        } finally {
             this.lock.unlock();
         }
     }
@@ -152,4 +162,53 @@ public class DefaultIndexProcessor extends IndexProcessor {
     public void close() throws Exception {
         this.indexFile.close();
     }
+
+
+    private Optional<IndexKeyEntry> tryFindIndex(final String key) {
+
+        final Optional<IndexKeyEntry> result = Iterables.tryFind(new Iterable<IndexKeyEntry>() {
+            @Override
+            public Iterator<IndexKeyEntry> iterator() {
+                return new IndexKeyEntryIterator();
+            }
+        }, new Predicate<IndexKeyEntry>() {
+            @Override
+            public boolean apply(IndexKeyEntry input) {
+                return input.getKey().equals(key);
+            }
+        });
+        return result;
+    }
+
+    private class IndexKeyEntryIterator implements Iterator<IndexKeyEntry> {
+        int current = 0;
+        int size;
+
+        IndexKeyEntryIterator() {
+            try {
+                size = count();
+                indexFile.seek(KEY_TABLE_FILE_POINTER);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return current < size;
+        }
+
+        @Override
+        public IndexKeyEntry next() {
+            IndexKeyEntry next = fetchNextIndexKeyEntry().get();
+            current++;
+            return next;
+        }
+
+        @Override
+        public void remove() {
+            throw new NotImplementedException();
+        }
+    }
+
 }

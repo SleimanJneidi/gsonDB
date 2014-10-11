@@ -2,7 +2,6 @@ package gsonDB.index;
 
 import com.google.common.base.Preconditions;
 import gsonDB.DB;
-import gsonDB.GsonDB;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class IndexProcessor implements AutoCloseable{
 
-    private static final Map<Class<?>,IndexProcessor> INDEX_HANDLERS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>,IndexProcessor> INDEX_PROCESSORS = new ConcurrentHashMap<>();
 
     protected final DB db;
     protected final Class<?> entityType;
@@ -28,11 +27,11 @@ public abstract class IndexProcessor implements AutoCloseable{
         Preconditions.checkNotNull(type,"Class shouldn't be null");
         Preconditions.checkNotNull(db,"DB is null");
 
-        if (INDEX_HANDLERS.containsKey(type)) {
-            return INDEX_HANDLERS.get(type);
+        if (INDEX_PROCESSORS.containsKey(type)) {
+            return INDEX_PROCESSORS.get(type);
         }
         IndexProcessor newHandler = new DefaultIndexProcessor(type,db); // FIXME: use default for now
-        INDEX_HANDLERS.put(type, newHandler);
+        INDEX_PROCESSORS.put(type, newHandler);
         return newHandler;
     }
 
@@ -52,8 +51,10 @@ public abstract class IndexProcessor implements AutoCloseable{
 
     public abstract IndexKeyEntry getIndexByKey(String id) throws IOException;
 
-    public static Map<Class<?>, IndexProcessor> allIndexHandlers(){
-        return Collections.unmodifiableMap(INDEX_HANDLERS);
+    public abstract IndexKeyEntry updateIndexKeyEntry(final IndexKeyEntry newIndexKeyEntry) throws IOException;
+
+    public static Map<Class<?>, IndexProcessor> allIndexProcessors(){
+        return Collections.unmodifiableMap(INDEX_PROCESSORS);
     }
 
     public DB getDB() {
