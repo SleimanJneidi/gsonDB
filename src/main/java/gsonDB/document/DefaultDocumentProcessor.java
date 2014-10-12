@@ -2,7 +2,6 @@ package gsonDB.document;
 
 import com.google.gson.*;
 import gsonDB.DB;
-import gsonDB.GsonDB;
 import gsonDB.index.IndexKeyEntry;
 import gsonDB.index.IndexProcessor;
 
@@ -29,7 +28,7 @@ public class DefaultDocumentProcessor extends BasicDocumentProcessor {
             this.lock.writeLock().lock();
 
             final long filePointer = this.writeDocument(jsonBuffer);
-            IndexProcessor indexProcessor = IndexProcessor.getIndexHandler(object.getClass(), db);
+            IndexProcessor indexProcessor = IndexProcessor.getIndexProcessor(object.getClass(), db);
             IndexKeyEntry indexKeyEntry = new IndexKeyEntry(id, filePointer, jsonBuffer.length);
             indexProcessor.insertNewIndexEntry(indexKeyEntry);
 

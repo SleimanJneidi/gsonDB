@@ -1,19 +1,12 @@
 package gsonDB.index;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.google.common.base.Optional;
 import gsonDB.AbstractTest;
-import gsonDB.Foo;
 import gsonDB.LongKeyException;
 import gsonDB.Person;
 import junit.framework.Assert;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -53,14 +46,16 @@ public class DefaultIndexProcessorTest extends AbstractTest {
             processor.insertNewIndexEntry(indexKeyEntry);
         }
 
-        IndexKeyEntry currentIndexByKey = processor.getIndexByKey("someId");
+        Optional<IndexKeyEntry> currentIndexByKeyOptional = processor.getIndexByKey("someId");
+        Assert.assertTrue(currentIndexByKeyOptional.isPresent());
 
+        IndexKeyEntry currentIndexByKey = currentIndexByKeyOptional.get();
         Assert.assertNotNull(currentIndexByKey);
 
         IndexKeyEntry newIndexKeyEntry = new IndexKeyEntry("someId", 90, 95);
         processor.updateIndexKeyEntry(newIndexKeyEntry);
 
-        currentIndexByKey = processor.getIndexByKey("someId");
+        currentIndexByKey = processor.getIndexByKey("someId").get();
         Assert.assertEquals(90,currentIndexByKey.getDataFilePointer());
         Assert.assertEquals(95,currentIndexByKey.getRecordSize());
 

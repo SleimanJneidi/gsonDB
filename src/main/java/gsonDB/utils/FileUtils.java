@@ -3,9 +3,7 @@ package gsonDB.utils;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -53,6 +51,15 @@ public class FileUtils {
         fileChannel.write(byteBuffer);
         fileChannel.write(bytesToCopy);
 
+    }
+
+    public static ByteBuffer join(ByteBuffer... byteBuffers) throws IOException {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        for (ByteBuffer byteBuffer : byteBuffers) {
+            outputStream.write(byteBuffer.array());
+        }
+        ByteBuffer joinedBuffer = ByteBuffer.wrap(outputStream.toByteArray());
+        return joinedBuffer;
     }
 
     public static long directorySize(final File directory) {

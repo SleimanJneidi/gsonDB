@@ -5,16 +5,17 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import gsonDB.LongKeyException;
 
+import java.io.Serializable;
+
 /**
  * Created by Sleiman on 28/09/2014.
  */
 
-public final class IndexKeyEntry {
+public final class IndexKeyEntry implements Serializable {
 
     private final String key;
     private final long dataFilePointer;
     private final int recordSize;
-
     private final long indexEntryFilePointer;
 
 
@@ -50,6 +51,14 @@ public final class IndexKeyEntry {
 
     public IndexKeyEntry setIndexEntryFilePointer(long indexEntryFilePointer) {
         return new IndexKeyEntry(this.key, this.dataFilePointer, this.recordSize, indexEntryFilePointer);
+    }
+
+    public IndexKeyEntry setRecordSize(int recordSize) {
+        return new IndexKeyEntry(this.key, this.dataFilePointer, recordSize, this.indexEntryFilePointer);
+    }
+
+    public IndexKeyEntry setDataFilePointer(long dataFilePointer) {
+        return new IndexKeyEntry(this.key, dataFilePointer, this.recordSize, this.indexEntryFilePointer);
     }
 
     public long getIndexEntryFilePointer() {

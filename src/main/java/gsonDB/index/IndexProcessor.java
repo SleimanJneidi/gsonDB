@@ -1,5 +1,6 @@
 package gsonDB.index;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import gsonDB.DB;
 
@@ -23,7 +24,7 @@ public abstract class IndexProcessor implements AutoCloseable{
     protected final File file;
     protected final RandomAccessFile indexFile;
 
-    public static IndexProcessor getIndexHandler(final Class<?> type,final DB db) throws FileNotFoundException {
+    public static IndexProcessor getIndexProcessor(final Class<?> type, final DB db) throws FileNotFoundException {
         Preconditions.checkNotNull(type,"Class shouldn't be null");
         Preconditions.checkNotNull(db,"DB is null");
 
@@ -49,7 +50,7 @@ public abstract class IndexProcessor implements AutoCloseable{
 
     public abstract void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException;
 
-    public abstract IndexKeyEntry getIndexByKey(String id) throws IOException;
+    public abstract Optional<IndexKeyEntry> getIndexByKey(String id) throws IOException;
 
     public abstract IndexKeyEntry updateIndexKeyEntry(final IndexKeyEntry newIndexKeyEntry) throws IOException;
 

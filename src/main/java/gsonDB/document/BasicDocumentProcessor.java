@@ -1,5 +1,6 @@
 package gsonDB.document;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.gson.Gson;
@@ -8,7 +9,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import gsonDB.DB;
-import gsonDB.GsonDB;
 import gsonDB.LongKeyException;
 import gsonDB.index.DefaultIndexProcessor;
 import gsonDB.index.IndexKeyEntry;
@@ -39,12 +39,15 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
     @Override
     public <T> T find(String id, Class<T> entityType) throws IOException {
-        DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
-        IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
-        if (indexKeyEntry == null)
+        DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexProcessor(entityType, db);
+        Optional<IndexKeyEntry> indexKeyEntryOptional = indexProcessor.getIndexByKey(id);
+        if (!indexKeyEntryOptional.isPresent()) {
             return null;
+        }
         try {
             this.lock.readLock().lock();
+
+            IndexKeyEntry indexKeyEntry = indexKeyEntryOptional.get();
 
             long filePointer = indexKeyEntry.getDataFilePointer();
             int recordSize = indexKeyEntry.getRecordSize();
@@ -90,22 +93,29 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
     @Override
     public void update(String id, Object newValue) throws IOException {
         /*
-        DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexHandler(entityType, db);
-        IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
+        Preconditions.checkNotNull(id);
+        Preconditions.checkNotNull(newValue);
+        Preconditions.checkArgument(newValue.getClass().equals(entityType));
+
+        IndexProcessor indexProcessor = IndexProcessor.getIndexProcessor(entityType,db);
+        final Optional<IndexKeyEntry> indexByKeyOptional = indexProcessor.getIndexByKey(id);
+        Preconditions.checkArgument(indexByKeyOptional.isPresent(), String.format(" Element with id: %s not found", id));
+
+        IndexKeyEntry oldRecordIndexEntry = indexByKeyOptional.get();
         */
+
         throw new NotImplementedException();
     }
 
     @Override
     public void delete(String id, Class<?> entityType) throws IOException {
-        IndexProcessor indexProcessor = IndexProcessor.getIndexHandler(entityType, db);
-        IndexKeyEntry indexKeyEntry = indexProcessor.getIndexByKey(id);
-        if (indexKeyEntry == null) {
-            return;
-        }
+        IndexProcessor indexProcessor = IndexProcessor.getIndexProcessor(entityType, db);
+        Optional<IndexKeyEntry> indexKeyEntryOptional = indexProcessor.getIndexByKey(id);
+
+        Preconditions.checkArgument(indexKeyEntryOptional.isPresent(),"Id not found");
         try {
             this.lock.writeLock().lock();
-            deleteRecord(indexProcessor, indexKeyEntry);
+            deleteRecord(indexProcessor, indexKeyEntryOptional.get());
         }finally {
             this.lock.writeLock().unlock();
         }

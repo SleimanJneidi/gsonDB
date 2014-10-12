@@ -49,17 +49,7 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         ByteBuffer dataFilePointerBuffer = ByteBuffer.allocate(FILE_POINTER_SIZE).putLong(indexKeyEntry.getDataFilePointer());
         ByteBuffer recordSizeBuffer = ByteBuffer.allocate(RECORD_LENGTH_SIZE).putInt(indexKeyEntry.getRecordSize());
 
-        final byte[] keyBufferArray = keyByteBuffer.array();
-        final byte[] dataFilePointerArray = dataFilePointerBuffer.array();
-        final byte[] recordSizeArray = recordSizeBuffer.array();
-
-        final byte[] joinedArray = new byte[keyBufferArray.length + dataFilePointerArray.length + recordSizeArray.length];
-
-        System.arraycopy(keyBufferArray, 0, joinedArray, 0, keyBufferArray.length);
-        System.arraycopy(dataFilePointerArray, 0, joinedArray, keyBufferArray.length, dataFilePointerArray.length);
-        System.arraycopy(recordSizeArray, 0, joinedArray, dataFilePointerArray.length, recordSizeArray.length);
-
-        final ByteBuffer newIndexEntryBuffer = ByteBuffer.wrap(joinedArray);
+        final ByteBuffer newIndexEntryBuffer = FileUtils.join(keyByteBuffer,dataFilePointerBuffer,recordSizeBuffer);
 
         FileUtils.pushBuffer(indexFile, newIndexEntryBuffer, greaterThanInput.getIndexEntryFilePointer());
 

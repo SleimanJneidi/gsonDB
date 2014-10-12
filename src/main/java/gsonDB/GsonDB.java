@@ -1,6 +1,7 @@
 package gsonDB;
 
 import com.google.common.base.Preconditions;
+import gsonDB.utils.FileUtils;
 
 import java.io.File;
 
@@ -30,6 +31,6 @@ public class GsonDB implements DB {
 
     @Override
     public long size() {
-        return 0;
+        return FileUtils.directorySize(this.dbDir);
     }
 }

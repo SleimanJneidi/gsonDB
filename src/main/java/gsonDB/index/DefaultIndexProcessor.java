@@ -25,8 +25,8 @@ public class DefaultIndexProcessor extends IndexProcessor {
     private static final int KEY_TABLE_FILE_POINTER = 0; // 4 bytes after the number of records
     public static final int KEY_SIZE = 36; // 36 bytes
     protected static final int FILE_POINTER_SIZE = 8; // long value
-    private static final int RECORD_LENGTH_SIZE = 4; // integer value
-    private static final int INDEX_KEY_ENTRY_SIZE = KEY_SIZE + FILE_POINTER_SIZE + RECORD_LENGTH_SIZE;
+    public static final int RECORD_LENGTH_SIZE = 4; // integer value
+    protected static final int INDEX_KEY_ENTRY_SIZE = KEY_SIZE + FILE_POINTER_SIZE + RECORD_LENGTH_SIZE;
 
     protected DefaultIndexProcessor(final Class<?> entityType, final DB db) throws FileNotFoundException {
         super(entityType, db);
@@ -80,10 +80,10 @@ public class DefaultIndexProcessor extends IndexProcessor {
     }
 
     @Override
-    public IndexKeyEntry getIndexByKey(String key) throws IOException {
+    public Optional<IndexKeyEntry> getIndexByKey(String key) throws IOException {
         Preconditions.checkNotNull(key);
         Optional<IndexKeyEntry> indexKeyEntry = tryFindIndex(key);
-        return indexKeyEntry.isPresent() ? indexKeyEntry.get() : null;
+        return indexKeyEntry;
     }
 
     @Override
@@ -92,9 +92,8 @@ public class DefaultIndexProcessor extends IndexProcessor {
         Preconditions.checkNotNull(newIndexKeyEntry.getKey());
 
         Optional<IndexKeyEntry> oldIndexKeyEntryOptional = tryFindIndex(newIndexKeyEntry.getKey());
-        if (!oldIndexKeyEntryOptional.isPresent()) {
-            throw new RuntimeException("Index key entry does not exist");
-        }
+        Preconditions.checkArgument(oldIndexKeyEntryOptional.isPresent(), "Index key entry does not exist");
+
         IndexKeyEntry oldIndexKeyEntry = oldIndexKeyEntryOptional.get();
         // write record length and file pointer
         indexFile.seek(oldIndexKeyEntry.getIndexEntryFilePointer() + KEY_SIZE);
@@ -127,12 +126,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
     private Optional<IndexKeyEntry> tryFindIndex(final String key) {
 
-        final Optional<IndexKeyEntry> result = Iterables.tryFind(new Iterable<IndexKeyEntry>() {
-            @Override
-            public Iterator<IndexKeyEntry> iterator() {
-                return new IndexKeyEntryIterator();
-            }
-        }, new Predicate<IndexKeyEntry>() {
+        final Optional<IndexKeyEntry> result = Iterables.tryFind(indexKeyEntryIterable(), new Predicate<IndexKeyEntry>() {
             @Override
             public boolean apply(IndexKeyEntry input) {
                 return input.getKey().equals(key);
@@ -141,7 +135,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
         return result;
     }
 
-    private class IndexKeyEntryIterator implements Iterator<IndexKeyEntry> {
+    protected class IndexKeyEntryIterator implements Iterator<IndexKeyEntry> {
         int current = 0;
         long size;
 
@@ -172,4 +166,33 @@ public class DefaultIndexProcessor extends IndexProcessor {
         }
     }
 
+    public Iterable<IndexKeyEntry> indexKeyEntryIterable(){
+        return new Iterable<IndexKeyEntry>() {
+            @Override
+            public Iterator<IndexKeyEntry> iterator() {
+                return new IndexKeyEntryIterator();
+            }
+        };
+    }
+
+    protected Optional<IndexKeyEntry> indexKeyEntryAtFilePosition(long filePosition) throws IOException {
+        Preconditions.checkArgument(filePosition >= 0);
+
+        if (filePosition + INDEX_KEY_ENTRY_SIZE > indexFile.length()) {
+            return Optional.absent();
+        }
+
+        indexFile.seek(filePosition);
+
+        byte[] keyBuffer = new byte[KEY_SIZE];
+        long indexFilePointer = indexFile.getFilePointer();
+        indexFile.readFully(keyBuffer);
+        String key = new String(keyBuffer);
+        key = key.trim(); // the key is often less than 36 bytes
+        long recordFilePointer = indexFile.readLong();
+        int recordSize = indexFile.readInt();
+        IndexKeyEntry indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
+        return Optional.of(indexKeyEntry);
+
+    }
 }
