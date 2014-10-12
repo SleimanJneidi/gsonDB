@@ -47,7 +47,6 @@ public class DeleteOperationsTest extends AbstractTest {
         Foo foo3 = new Foo(3, "foo3");
         fooDocumentProcessor.insert(foo3);
 
-        fooDocumentProcessor.findAll(Foo.class);
         Assert.assertTrue(fooDocumentProcessor.findAll(Foo.class).size() == 3);
 
         fooDocumentProcessor.delete("3", Foo.class);
