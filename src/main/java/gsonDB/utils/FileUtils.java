@@ -1,7 +1,9 @@
 package gsonDB.utils;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -12,20 +14,68 @@ import java.nio.channels.FileChannel;
  */
 public class FileUtils {
 
-    public static void deleteBytes(RandomAccessFile file, long from, int length) throws IOException {
+    /**
+     * Deletes chunk of data from a file, it copies all the records that reside below length
+     * to a temporary buffer and write them again at the tail
+     *
+     * @param file
+     * @param offset
+     * @param length
+     * @throws IOException
+     */
+    public static void deleteBytes(RandomAccessFile file, long offset, int length) throws IOException {
         Preconditions.checkNotNull(file);
-        Preconditions.checkArgument(file.length() >= (from + length));
+        Preconditions.checkArgument(file.length() >= (offset + length));
 
-        file.seek(from + length);
         FileChannel fileChannel = file.getChannel();
-        fileChannel.position(from + length);
+        fileChannel.position(offset + length);
 
-        ByteBuffer bytesToCopy = ByteBuffer.allocate((int) (file.length() - (from + length)));
+        ByteBuffer bytesToCopy = ByteBuffer.allocate((int) (file.length() - (offset + length)));
 
         fileChannel.read(bytesToCopy);
-        fileChannel.truncate(from);
+        fileChannel.truncate(offset);
         bytesToCopy.flip();
 
         fileChannel.write(bytesToCopy);
+    }
+
+    public static void pushBuffer(RandomAccessFile file, ByteBuffer byteBuffer, long position) throws IOException {
+        FileChannel fileChannel = file.getChannel();
+        int lengthToCopy = (int) (file.length() - position);
+
+        ByteBuffer bytesToCopy = ByteBuffer.allocate(lengthToCopy);
+        fileChannel.position(position);
+        fileChannel.read(bytesToCopy);
+        fileChannel.position(position);
+
+        bytesToCopy.flip();
+
+        fileChannel.write(byteBuffer);
+        fileChannel.write(bytesToCopy);
+
+    }
+
+    public static long directorySize(final File directory) {
+
+        Function<File, Long> dirSizeFunc = new Function<File, Long>() {
+            private long size = 0L;
+
+            @Override
+            public Long apply(File dir) {
+                for (File file : dir.listFiles()) {
+                    if (file.isDirectory()) {
+                        return apply(file);
+                    } else {
+                        size += file.length();
+                    }
+
+                }
+
+                return size;
+            }
+        };
+
+        long size = dirSizeFunc.apply(directory);
+        return size;
     }
 }
