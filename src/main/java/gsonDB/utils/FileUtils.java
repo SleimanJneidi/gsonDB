@@ -63,7 +63,7 @@ public class FileUtils {
     }
 
     public static long directorySize(final File directory) {
-
+        Preconditions.checkNotNull(directory);
         Function<File, Long> dirSizeFunc = new Function<File, Long>() {
             private long size = 0L;
 

@@ -60,7 +60,8 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         return indexKeyEntryAtFilePosition(indexFile.length() - INDEX_KEY_ENTRY_SIZE).get();
     }
 
-    Optional<IndexKeyEntry> find(String key) throws IOException {
+    @Override
+    public Optional<IndexKeyEntry> getIndexByKey(String key) throws IOException {
         Preconditions.checkNotNull(key);
         if (indexFile.length() == 0 || key.compareTo(lastIndexEntry().getKey()) > 0) {
             return Optional.absent();
@@ -97,7 +98,7 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         }
     }
 
-    IndexKeyEntry indexAt(long position) throws IOException {
+    private IndexKeyEntry indexAt(long position) throws IOException {
         Preconditions.checkArgument(position <= indexFile.length() + KEY_SIZE);
 
         indexFile.seek(position);
