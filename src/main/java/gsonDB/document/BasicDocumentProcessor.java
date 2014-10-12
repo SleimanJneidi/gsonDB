@@ -39,7 +39,6 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
     @Override
     public <T> T find(String id, Class<T> entityType) throws IOException {
-        DefaultIndexProcessor indexProcessor = (DefaultIndexProcessor) DefaultIndexProcessor.getIndexProcessor(entityType, db);
         Optional<IndexKeyEntry> indexKeyEntryOptional = indexProcessor.getIndexByKey(id);
         if (!indexKeyEntryOptional.isPresent()) {
             return null;
@@ -109,13 +108,12 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
     @Override
     public void delete(String id, Class<?> entityType) throws IOException {
-        IndexProcessor indexProcessor = IndexProcessor.getIndexProcessor(entityType, db);
         Optional<IndexKeyEntry> indexKeyEntryOptional = indexProcessor.getIndexByKey(id);
 
         Preconditions.checkArgument(indexKeyEntryOptional.isPresent(),"Id not found");
         try {
             this.lock.writeLock().lock();
-            deleteRecord(indexProcessor, indexKeyEntryOptional.get());
+            deleteRecord(indexKeyEntryOptional.get());
         }finally {
             this.lock.writeLock().unlock();
         }
@@ -129,7 +127,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
         return filePointer;
     }
 
-    protected void deleteRecord(IndexProcessor indexProcessor, IndexKeyEntry indexKeyEntry) throws IOException {
+    protected void deleteRecord(IndexKeyEntry indexKeyEntry) throws IOException {
         FileUtils.deleteBytes(dataFile, indexKeyEntry.getDataFilePointer(), indexKeyEntry.getRecordSize());
         indexProcessor.deleteIndexKeyEntry(indexKeyEntry);
     }

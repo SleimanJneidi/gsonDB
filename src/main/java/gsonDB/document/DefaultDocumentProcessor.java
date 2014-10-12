@@ -28,7 +28,6 @@ public class DefaultDocumentProcessor extends BasicDocumentProcessor {
             this.lock.writeLock().lock();
 
             final long filePointer = this.writeDocument(jsonBuffer);
-            IndexProcessor indexProcessor = IndexProcessor.getIndexProcessor(object.getClass(), db);
             IndexKeyEntry indexKeyEntry = new IndexKeyEntry(id, filePointer, jsonBuffer.length);
             indexProcessor.insertNewIndexEntry(indexKeyEntry);
 

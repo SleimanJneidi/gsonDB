@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import gsonDB.DB;
 import gsonDB.GsonDB;
+import gsonDB.index.IndexProcessor;
 
 /**
  * @author Sleiman
@@ -27,6 +28,8 @@ public abstract class DocumentProcessor implements AutoCloseable {
 
     protected final Gson gson = new Gson();
 
+    protected final IndexProcessor indexProcessor;
+
     protected DocumentProcessor(final Class<?> entityType, DB db) throws FileNotFoundException {
 
         this.db = db;
@@ -34,6 +37,7 @@ public abstract class DocumentProcessor implements AutoCloseable {
         String documentFileName = entityType.getSimpleName() + "_data";
         this.file = new File(db.getDBDir(), documentFileName);
         this.dataFile = new RandomAccessFile(file, "rw");
+        indexProcessor = IndexProcessor.getIndexProcessor(entityType, db);
 
     }
 

@@ -17,16 +17,16 @@ public class InvertedIndex {
 
     private final Map<String, List<IndexTuple>> indexMap = new ConcurrentHashMap<>();
     private final DB db;
-    private final File indexFile;
+    private final InvertedIndexStore indexStore;
 
-    private InvertedIndex(final DB db, final File indexFile) {
+    private InvertedIndex(final DB db,InvertedIndexStore indexStore ) {
         this.db = db;
-        this.indexFile = indexFile;
+        this.indexStore = indexStore;
     }
 
     public static InvertedIndex getInstance(final DB db, Class<?> entityType) {
         File indexFile = new File(db.getDBDir().getPath() + File.pathSeparator + "__fts_" + entityType.getSimpleName());
-        return new InvertedIndex(db, indexFile);
+        return new InvertedIndex(db, GsonInvertedIndexStore.getInstance(indexFile));
     }
 
     public Map<String, List<IndexTuple>> getIndexMap() {
