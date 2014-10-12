@@ -27,7 +27,7 @@ public final class IndexKeyEntry implements Serializable {
 
         Preconditions.checkNotNull(key, "Key cannot be null");
         Preconditions.checkArgument(dataFilePointer >= 0);
-        Preconditions.checkArgument(recordSize > 0);
+        //Preconditions.checkArgument(recordSize > 0);
         if (key.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
             throw new LongKeyException();
         }

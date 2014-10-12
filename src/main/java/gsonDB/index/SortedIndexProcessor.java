@@ -12,6 +12,7 @@ import gsonDB.utils.FileUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Iterator;
@@ -49,7 +50,7 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         ByteBuffer dataFilePointerBuffer = ByteBuffer.allocate(FILE_POINTER_SIZE).putLong(indexKeyEntry.getDataFilePointer());
         ByteBuffer recordSizeBuffer = ByteBuffer.allocate(RECORD_LENGTH_SIZE).putInt(indexKeyEntry.getRecordSize());
 
-        final ByteBuffer newIndexEntryBuffer = FileUtils.join(keyByteBuffer,dataFilePointerBuffer,recordSizeBuffer);
+        final ByteBuffer newIndexEntryBuffer = FileUtils.join(keyByteBuffer, dataFilePointerBuffer, recordSizeBuffer);
 
         FileUtils.pushBuffer(indexFile, newIndexEntryBuffer, greaterThanInput.getIndexEntryFilePointer());
 
@@ -59,14 +60,58 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         return indexKeyEntryAtFilePosition(indexFile.length() - INDEX_KEY_ENTRY_SIZE).get();
     }
 
-    private void writeAt(IndexKeyEntry indexKeyEntry, long position) throws IOException {
+    Optional<IndexKeyEntry> find(String key) throws IOException {
+        Preconditions.checkNotNull(key);
+        if (indexFile.length() == 0 || key.compareTo(lastIndexEntry().getKey()) > 0) {
+            return Optional.absent();
+        }
+        long start = 0;
+        long end = indexFile.length();
+        return binarySearch(key, start, end);
 
-        this.indexFile.seek(position);
-        ByteBuffer keyByteBuffer = ByteBuffer.allocate(KEY_SIZE).put(indexKeyEntry.getKey().getBytes());
-        byte[] keyBuffer = keyByteBuffer.array();
-
-        this.indexFile.write(keyBuffer);
-        this.indexFile.writeLong(indexKeyEntry.getDataFilePointer());
-        this.indexFile.writeInt(indexKeyEntry.getRecordSize());
     }
+
+    private Optional<IndexKeyEntry> binarySearch(String key, long start, long end) throws IOException {
+
+        long mid = (start + end) / 2;
+        if (mid < INDEX_KEY_ENTRY_SIZE) {
+            mid = 0;
+        }
+        if (mid == indexFile.length()) {
+            mid = mid - INDEX_KEY_ENTRY_SIZE;
+        }
+
+        if (mid % INDEX_KEY_ENTRY_SIZE != 0) {
+            mid = mid + mid % INDEX_KEY_ENTRY_SIZE;
+        }
+
+        IndexKeyEntry indexKeyEntry = indexAt(mid);
+        if (indexKeyEntry.getKey().compareTo(key) == 0) {
+            return Optional.of(indexKeyEntry);
+        } else if (mid == start || mid == end) {
+            return Optional.absent();
+        } else if (indexKeyEntry.getKey().compareTo(key) > 0) {
+            return binarySearch(key, start, mid);
+        } else {
+            return binarySearch(key, mid, end);
+        }
+    }
+
+    IndexKeyEntry indexAt(long position) throws IOException {
+        Preconditions.checkArgument(position <= indexFile.length() + KEY_SIZE);
+
+        indexFile.seek(position);
+        byte[] keyBuffer = new byte[KEY_SIZE];
+
+        long indexFilePointer = indexFile.getFilePointer();
+        indexFile.readFully(keyBuffer);
+        String key = new String(keyBuffer);
+        key = key.trim(); // the key is often less than 36 bytes
+        long recordFilePointer = indexFile.readLong();
+        int recordSize = indexFile.readInt();
+        IndexKeyEntry indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
+
+        return indexKeyEntry;
+    }
+
 }

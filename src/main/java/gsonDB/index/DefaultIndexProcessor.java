@@ -68,12 +68,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
         try {
             lock.lock();
             this.indexFile.seek(this.indexFile.length());
-            ByteBuffer keyByteBuffer = ByteBuffer.allocate(KEY_SIZE).put(indexKeyEntry.getKey().getBytes());
-            byte[] keyBuffer = keyByteBuffer.array();
-
-            this.indexFile.write(keyBuffer);
-            this.indexFile.writeLong(indexKeyEntry.getDataFilePointer());
-            this.indexFile.writeInt(indexKeyEntry.getRecordSize());
+            writeAt(indexKeyEntry, this.indexFile.length());
         } finally {
             lock.unlock();
         }
@@ -166,7 +161,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
         }
     }
 
-    public Iterable<IndexKeyEntry> indexKeyEntryIterable(){
+    public Iterable<IndexKeyEntry> indexKeyEntryIterable() {
         return new Iterable<IndexKeyEntry>() {
             @Override
             public Iterator<IndexKeyEntry> iterator() {
@@ -194,5 +189,16 @@ public class DefaultIndexProcessor extends IndexProcessor {
         IndexKeyEntry indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
         return Optional.of(indexKeyEntry);
 
+    }
+
+    protected void writeAt(IndexKeyEntry indexKeyEntry, long position) throws IOException {
+
+        this.indexFile.seek(position);
+        ByteBuffer keyByteBuffer = ByteBuffer.allocate(KEY_SIZE).put(indexKeyEntry.getKey().getBytes());
+        byte[] keyBuffer = keyByteBuffer.array();
+
+        this.indexFile.write(keyBuffer);
+        this.indexFile.writeLong(indexKeyEntry.getDataFilePointer());
+        this.indexFile.writeInt(indexKeyEntry.getRecordSize());
     }
 }
