@@ -3,7 +3,6 @@ package gsonDB.document;
 import com.google.gson.*;
 import gsonDB.DB;
 import gsonDB.index.IndexKeyEntry;
-import gsonDB.index.IndexProcessor;
 
 import java.io.*;
 
@@ -21,7 +20,7 @@ public class DefaultDocumentProcessor extends BasicDocumentProcessor {
     public JsonObject insert(Object object) throws IOException {
 
         JsonObject jsonObject = toJson(object);
-        String id = jsonObject.get("id").getAsString();
+        long id = jsonObject.get(DEFAULT_ID_NAME).getAsLong();
         final byte[] jsonBuffer = jsonObject.toString().getBytes("UTF-8");
 
         try {

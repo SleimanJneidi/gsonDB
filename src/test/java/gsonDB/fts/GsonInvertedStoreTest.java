@@ -2,7 +2,7 @@ package gsonDB.fts;
 
 import com.google.common.collect.Lists;
 import gsonDB.AbstractTest;
-import gsonDB.index.fts.GsonInvertedIndexStore;
+import gsonDB.index.fts.JsonInvertedIndexStore;
 import gsonDB.index.fts.IndexTuple;
 import gsonDB.index.fts.InvertedIndexStore;
 import junit.framework.Assert;
@@ -22,7 +22,7 @@ public class GsonInvertedStoreTest extends AbstractTest {
     @Test
     public void testCanStoreInvertedIndex() throws IOException {
 
-        InvertedIndexStore indexStore = GsonInvertedIndexStore.getInstance(new File(testDB.getDBDir() + "/index"));
+        InvertedIndexStore indexStore = JsonInvertedIndexStore.getInstance(new File(testDB.getDBDir() + "/index"));
         indexStore.store(dummyMap());
         final Map<String, List<IndexTuple>> fetchedMap = indexStore.load();
 

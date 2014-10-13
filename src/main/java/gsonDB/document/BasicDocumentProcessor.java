@@ -12,7 +12,6 @@ import gsonDB.DB;
 import gsonDB.LongKeyException;
 import gsonDB.index.DefaultIndexProcessor;
 import gsonDB.index.IndexKeyEntry;
-import gsonDB.index.IndexProcessor;
 import gsonDB.utils.FileUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -38,10 +37,10 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
 
     @Override
-    public <T> T find(String id, Class<T> entityType) throws IOException {
+    public <T> Optional<T> find(long id, Class<T> entityType) throws IOException {
         Optional<IndexKeyEntry> indexKeyEntryOptional = indexProcessor.getIndexByKey(id);
         if (!indexKeyEntryOptional.isPresent()) {
-            return null;
+            return Optional.absent();
         }
         try {
             this.lock.readLock().lock();
@@ -55,7 +54,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
             dataFile.readFully(buffer);
             String json = new String(buffer, "UTF-8");
             T object = gson.fromJson(json, entityType);
-            return object;
+            return Optional.of(object);
 
         } finally {
             this.lock.readLock().unlock();
@@ -90,7 +89,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
     }
 
     @Override
-    public void update(String id, Object newValue) throws IOException {
+    public void update(long id, Object newValue) throws IOException {
         /*
         Preconditions.checkNotNull(id);
         Preconditions.checkNotNull(newValue);
@@ -107,14 +106,14 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
     }
 
     @Override
-    public void delete(String id, Class<?> entityType) throws IOException {
+    public void delete(long id, Class<?> entityType) throws IOException {
         Optional<IndexKeyEntry> indexKeyEntryOptional = indexProcessor.getIndexByKey(id);
+        Preconditions.checkArgument(indexKeyEntryOptional.isPresent(), "Id not found");
 
-        Preconditions.checkArgument(indexKeyEntryOptional.isPresent(),"Id not found");
         try {
             this.lock.writeLock().lock();
             deleteRecord(indexKeyEntryOptional.get());
-        }finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }
@@ -136,18 +135,9 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
         Preconditions.checkNotNull(object, "Inserted object shouldn't be null");
         Gson gson = new Gson();
         JsonObject jsonObject = gson.toJsonTree(object).getAsJsonObject();
-        JsonElement jsonIdElement = jsonObject.get(DEFAULT_ID_NAME);
-        String id = null;
-        if (jsonIdElement != null) {
-            id = jsonIdElement.getAsString();
-        }
+        long id = System.currentTimeMillis();
+        jsonObject.addProperty(DEFAULT_ID_NAME, id);
 
-        if (jsonIdElement != null && id.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
-            throw new LongKeyException();
-        } else if (jsonIdElement == null) { // generate key for the document
-            id = String.valueOf(System.nanoTime());
-            jsonObject.addProperty(DEFAULT_ID_NAME, id);
-        }
         return jsonObject;
     }
 }

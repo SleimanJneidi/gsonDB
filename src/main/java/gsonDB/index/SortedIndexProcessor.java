@@ -3,18 +3,13 @@ package gsonDB.index;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.ObjectArrays;
-import com.sun.deploy.util.ArrayUtil;
 import gsonDB.DB;
 import gsonDB.utils.FileUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.Iterator;
 
 /**
@@ -26,6 +21,7 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         super(entityType, db);
     }
 
+    /*
     @Override
     public void insertNewIndexEntry(final IndexKeyEntry indexKeyEntry) throws IOException {
 
@@ -55,15 +51,15 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         FileUtils.pushBuffer(indexFile, newIndexEntryBuffer, greaterThanInput.getIndexEntryFilePointer());
 
     }
-
+    */
     private IndexKeyEntry lastIndexEntry() throws IOException {
         return indexKeyEntryAtFilePosition(indexFile.length() - INDEX_KEY_ENTRY_SIZE).get();
     }
 
     @Override
-    public Optional<IndexKeyEntry> getIndexByKey(String key) throws IOException {
+    public Optional<IndexKeyEntry> getIndexByKey(long key) throws IOException {
         Preconditions.checkNotNull(key);
-        if (indexFile.length() == 0 || key.compareTo(lastIndexEntry().getKey()) > 0) {
+        if (indexFile.length() == 0 || key > lastIndexEntry().getKey()) {
             return Optional.absent();
         }
         long start = 0;
@@ -72,7 +68,7 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
 
     }
 
-    private Optional<IndexKeyEntry> binarySearch(String key, long start, long end) throws IOException {
+    private Optional<IndexKeyEntry> binarySearch(long key, long start, long end) throws IOException {
 
         long mid = (start + end) / 2;
         if (mid < INDEX_KEY_ENTRY_SIZE) {
@@ -82,16 +78,15 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
             mid = mid - INDEX_KEY_ENTRY_SIZE;
         }
 
-        if (mid % INDEX_KEY_ENTRY_SIZE != 0) {
-            mid = mid + mid % INDEX_KEY_ENTRY_SIZE;
-        }
+        mid = mid + mid % INDEX_KEY_ENTRY_SIZE; // adapt the mid to a valid key entry
+
 
         IndexKeyEntry indexKeyEntry = indexAt(mid);
-        if (indexKeyEntry.getKey().compareTo(key) == 0) {
+        if (indexKeyEntry.getKey() == key) {
             return Optional.of(indexKeyEntry);
         } else if (mid == start || mid == end) {
             return Optional.absent();
-        } else if (indexKeyEntry.getKey().compareTo(key) > 0) {
+        } else if (indexKeyEntry.getKey() > key) {
             return binarySearch(key, start, mid);
         } else {
             return binarySearch(key, mid, end);
@@ -102,14 +97,12 @@ public class SortedIndexProcessor extends DefaultIndexProcessor {
         Preconditions.checkArgument(position <= indexFile.length() + KEY_SIZE);
 
         indexFile.seek(position);
-        byte[] keyBuffer = new byte[KEY_SIZE];
 
         long indexFilePointer = indexFile.getFilePointer();
-        indexFile.readFully(keyBuffer);
-        String key = new String(keyBuffer);
-        key = key.trim(); // the key is often less than 36 bytes
+        long key = indexFile.readLong();
         long recordFilePointer = indexFile.readLong();
         int recordSize = indexFile.readInt();
+
         IndexKeyEntry indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
 
         return indexKeyEntry;

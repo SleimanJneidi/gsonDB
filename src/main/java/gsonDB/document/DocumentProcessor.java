@@ -3,12 +3,12 @@ package gsonDB.document;
 import java.io.*;
 import java.util.List;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import gsonDB.DB;
-import gsonDB.GsonDB;
 import gsonDB.index.IndexProcessor;
 
 /**
@@ -16,7 +16,7 @@ import gsonDB.index.IndexProcessor;
  */
 public abstract class DocumentProcessor implements AutoCloseable {
 
-    public static final String DEFAULT_ID_NAME = "id";
+    public static final String DEFAULT_ID_NAME = "_id";
 
     protected final RandomAccessFile dataFile;
 
@@ -60,11 +60,11 @@ public abstract class DocumentProcessor implements AutoCloseable {
 
     public abstract <T> List<T> find(Class<T> entityType, Predicate<T> predicate) throws IOException;
 
-    public abstract <T> T find(String id, Class<T> entityType) throws IOException;
+    public abstract <T> Optional<T> find(long id, Class<T> entityType) throws IOException;
 
-    public abstract void delete(String id, Class<?> entityType) throws IOException;
+    public abstract void delete(long id, Class<?> entityType) throws IOException;
 
-    public abstract void update(String id, Object newValue) throws IOException;
+    public abstract void update(long id, Object newValue) throws IOException;
 
     public DB getDb() {
         return db;

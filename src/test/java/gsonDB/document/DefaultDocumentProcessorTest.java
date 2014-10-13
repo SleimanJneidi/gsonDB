@@ -42,7 +42,7 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
     public void testCanGenerateKey() throws IOException {
         Person person = Person.createShortList().get(0);
         JsonObject jsonObject = personDocumentProcessor().insert(person);
-        String generatedKeyString = jsonObject.get("id").getAsString();
+        String generatedKeyString = jsonObject.get(BasicDocumentProcessor.DEFAULT_ID_NAME).getAsString();
         Long generatedKey = Long.parseLong(generatedKeyString);
         Assert.assertNotNull(generatedKey);
     }
@@ -56,12 +56,12 @@ public class DefaultDocumentProcessorTest extends AbstractTest {
 
     @Test
     public void testCanFetchKeyByPrimaryKey() throws IOException {
+
         Foo foo = new Foo(43, "Dave");
-        personDocumentProcessor().insert(foo);
+        final JsonObject jsonObject = personDocumentProcessor().insert(foo);
 
-        Foo foo1 = personDocumentProcessor().find(String.valueOf(foo.getId()), Foo.class);
+        Foo foo1 = personDocumentProcessor().find(jsonObject.get(BasicDocumentProcessor.DEFAULT_ID_NAME).getAsLong(), Foo.class).get();
 
-        Assert.assertEquals(foo.getId(), foo1.getId());
         Assert.assertEquals(foo.getName(), foo1.getName());
     }
 

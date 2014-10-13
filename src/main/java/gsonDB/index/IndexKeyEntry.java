@@ -13,31 +13,30 @@ import java.io.Serializable;
 
 public final class IndexKeyEntry implements Serializable {
 
-    private final String key;
+    private final long key;
     private final long dataFilePointer;
     private final int recordSize;
     private final long indexEntryFilePointer;
 
 
-    public IndexKeyEntry(final String key, final long dataFilePointer, final int recordSize) {
+    public IndexKeyEntry(final long key, final long dataFilePointer, final int recordSize) {
         this(key, dataFilePointer, recordSize, -1);
     }
 
-    public IndexKeyEntry(final String key, final long dataFilePointer, final int recordSize, final long indexEntryFilePointer) {
+    public IndexKeyEntry(final long key, final long dataFilePointer, final int recordSize, final long indexEntryFilePointer) {
 
         Preconditions.checkNotNull(key, "Key cannot be null");
         Preconditions.checkArgument(dataFilePointer >= 0);
-        //Preconditions.checkArgument(recordSize > 0);
-        if (key.getBytes().length > DefaultIndexProcessor.KEY_SIZE) {
-            throw new LongKeyException();
-        }
+        Preconditions.checkArgument(recordSize > 0);
+        Preconditions.checkArgument(key > 0);
+
         this.key = key;
         this.dataFilePointer = dataFilePointer;
         this.recordSize = recordSize;
         this.indexEntryFilePointer = indexEntryFilePointer;
     }
 
-    public String getKey() {
+    public long getKey() {
         return key;
     }
 
@@ -69,8 +68,9 @@ public final class IndexKeyEntry implements Serializable {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("key", key)
-                .add("file pointer", dataFilePointer)
+                .add("data file pointer", dataFilePointer)
                 .add("record size", recordSize)
+                .add("index file pointer", indexEntryFilePointer)
                 .toString();
     }
 
@@ -87,8 +87,8 @@ public final class IndexKeyEntry implements Serializable {
         IndexKeyEntry that = (IndexKeyEntry) o;
 
         if (dataFilePointer != that.dataFilePointer) return false;
+        if (key != that.key) return false;
         if (recordSize != that.recordSize) return false;
-        if (!key.equals(that.key)) return false;
 
         return true;
     }

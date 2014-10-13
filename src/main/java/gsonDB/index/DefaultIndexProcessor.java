@@ -23,7 +23,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
     private final Lock lock = new ReentrantLock();
     private static final int KEY_TABLE_FILE_POINTER = 0; // 4 bytes after the number of records
-    public static final int KEY_SIZE = 36; // 36 bytes
+    public static final int KEY_SIZE = 8; // long value
     protected static final int FILE_POINTER_SIZE = 8; // long value
     public static final int RECORD_LENGTH_SIZE = 4; // integer value
     protected static final int INDEX_KEY_ENTRY_SIZE = KEY_SIZE + FILE_POINTER_SIZE + RECORD_LENGTH_SIZE;
@@ -43,12 +43,9 @@ public class DefaultIndexProcessor extends IndexProcessor {
             @Override
             public IndexKeyEntry get() {
                 IndexKeyEntry indexKeyEntry = null;
-                byte[] keyBuffer = new byte[KEY_SIZE];
                 try {
                     long indexFilePointer = indexFile.getFilePointer();
-                    indexFile.readFully(keyBuffer);
-                    String key = new String(keyBuffer);
-                    key = key.trim(); // the key is often less than 36 bytes
+                    long key = indexFile.readLong();
                     long recordFilePointer = indexFile.readLong();
                     int recordSize = indexFile.readInt();
                     indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
@@ -75,7 +72,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
     }
 
     @Override
-    public Optional<IndexKeyEntry> getIndexByKey(String key) throws IOException {
+    public Optional<IndexKeyEntry> getIndexByKey(long key) throws IOException {
         Preconditions.checkNotNull(key);
         Optional<IndexKeyEntry> indexKeyEntry = tryFindIndex(key);
         return indexKeyEntry;
@@ -119,12 +116,12 @@ public class DefaultIndexProcessor extends IndexProcessor {
     }
 
 
-    private Optional<IndexKeyEntry> tryFindIndex(final String key) {
+    private Optional<IndexKeyEntry> tryFindIndex(final long key) {
 
         final Optional<IndexKeyEntry> result = Iterables.tryFind(indexKeyEntryIterable(), new Predicate<IndexKeyEntry>() {
             @Override
             public boolean apply(IndexKeyEntry input) {
-                return input.getKey().equals(key);
+                return input.getKey() == key;
             }
         });
         return result;
@@ -179,11 +176,8 @@ public class DefaultIndexProcessor extends IndexProcessor {
 
         indexFile.seek(filePosition);
 
-        byte[] keyBuffer = new byte[KEY_SIZE];
         long indexFilePointer = indexFile.getFilePointer();
-        indexFile.readFully(keyBuffer);
-        String key = new String(keyBuffer);
-        key = key.trim(); // the key is often less than 36 bytes
+        long key = indexFile.readLong();
         long recordFilePointer = indexFile.readLong();
         int recordSize = indexFile.readInt();
         IndexKeyEntry indexKeyEntry = new IndexKeyEntry(key, recordFilePointer, recordSize, indexFilePointer);
@@ -194,10 +188,7 @@ public class DefaultIndexProcessor extends IndexProcessor {
     protected void writeAt(IndexKeyEntry indexKeyEntry, long position) throws IOException {
 
         this.indexFile.seek(position);
-        ByteBuffer keyByteBuffer = ByteBuffer.allocate(KEY_SIZE).put(indexKeyEntry.getKey().getBytes());
-        byte[] keyBuffer = keyByteBuffer.array();
-
-        this.indexFile.write(keyBuffer);
+        this.indexFile.writeLong(indexKeyEntry.getKey());
         this.indexFile.writeLong(indexKeyEntry.getDataFilePointer());
         this.indexFile.writeInt(indexKeyEntry.getRecordSize());
     }

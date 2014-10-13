@@ -50,7 +50,7 @@ public abstract class IndexProcessor implements AutoCloseable{
 
     public abstract void deleteIndexKeyEntry(IndexKeyEntry indexKeyEntry) throws IOException;
 
-    public abstract Optional<IndexKeyEntry> getIndexByKey(String id) throws IOException;
+    public abstract Optional<IndexKeyEntry> getIndexByKey(long id) throws IOException;
 
     public abstract IndexKeyEntry updateIndexKeyEntry(final IndexKeyEntry newIndexKeyEntry) throws IOException;
 
