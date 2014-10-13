@@ -7,20 +7,19 @@ import java.io.Serializable;
  */
 public class IndexTuple implements Serializable {
 
-    private final String documentId;
+    private final long documentId;
     private final int position;
 
-    public IndexTuple(String documentId, int position) {
+    public IndexTuple(long documentId, int position) {
         this.documentId = documentId;
         this.position = position;
     }
 
-    public String getDocumentId() {
+    public long getDocumentId() {
         return documentId;
     }
 
     public int getPosition() {
-
         return position;
     }
 
@@ -31,18 +30,16 @@ public class IndexTuple implements Serializable {
 
         IndexTuple that = (IndexTuple) o;
 
+        if (documentId != that.documentId) return false;
         if (position != that.position) return false;
-        if (documentId != null ? !documentId.equals(that.documentId) : that.documentId != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = documentId != null ? documentId.hashCode() : 0;
+        int result = (int) (documentId ^ (documentId >>> 32));
         result = 31 * result + position;
         return result;
     }
-
-
 }

@@ -32,9 +32,9 @@ public class GsonInvertedStoreTest extends AbstractTest {
     private Map<String, List<IndexTuple>> dummyMap() {
         final Map<String, List<IndexTuple>> indexMap = new ConcurrentHashMap<>();
 
-        indexMap.put("hi", Lists.newArrayList(new IndexTuple("1", 0), new IndexTuple("1", 0), new IndexTuple("1", 0)));
-        indexMap.put("yes", Lists.newArrayList(new IndexTuple("1", 0), new IndexTuple("1", 0), new IndexTuple("1", 0)));
-        indexMap.put("apple", Lists.newArrayList(new IndexTuple("1", 0), new IndexTuple("1", 0), new IndexTuple("1", 0)));
+        indexMap.put("hi", Lists.newArrayList(new IndexTuple(1, 0), new IndexTuple(1, 0), new IndexTuple(1, 0)));
+        indexMap.put("yes", Lists.newArrayList(new IndexTuple(1, 0), new IndexTuple(1, 0), new IndexTuple(1, 0)));
+        indexMap.put("apple", Lists.newArrayList(new IndexTuple(1, 0), new IndexTuple(1, 0), new IndexTuple(1, 0)));
         return indexMap;
     }
 }
