@@ -26,10 +26,10 @@ public class JsonInvertedIndexStore implements InvertedIndexStore {
 
     @Override
     public Map<String, List<IndexTuple>> load() throws IOException {
-        final byte[] jsonByteBuffer = Files.readAllBytes(indexFile.toPath());
-        if (jsonByteBuffer.length == 0) {
+        if (!indexFile.exists()) {
             return new ConcurrentHashMap<>();
         }
+        final byte[] jsonByteBuffer = Files.readAllBytes(indexFile.toPath());
         String jsonString = new String(jsonByteBuffer);
         Gson gson = new Gson();
         ConcurrentHashMap<String, List<IndexTuple>> indexMap = gson.fromJson(jsonString, new ConcurrentHashMap<String, List<IndexTuple>>().getClass());

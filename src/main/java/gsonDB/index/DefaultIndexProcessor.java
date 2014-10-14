@@ -22,7 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DefaultIndexProcessor extends IndexProcessor {
 
     private final Lock lock = new ReentrantLock();
-    private static final int KEY_TABLE_FILE_POINTER = 0; // 4 bytes after the number of records
+    private static final int KEY_TABLE_FILE_POINTER = 0;
     public static final int KEY_SIZE = 8; // long value
     protected static final int FILE_POINTER_SIZE = 8; // long value
     public static final int RECORD_LENGTH_SIZE = 4; // integer value

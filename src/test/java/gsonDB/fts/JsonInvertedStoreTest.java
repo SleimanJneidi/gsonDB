@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by Sleiman on 13/10/2014.
  */
-public class GsonInvertedStoreTest extends AbstractTest {
+public class JsonInvertedStoreTest extends AbstractTest {
 
     @Test
     public void testCanStoreInvertedIndex() throws IOException {
@@ -26,8 +26,10 @@ public class GsonInvertedStoreTest extends AbstractTest {
         indexStore.store(dummyMap());
         final Map<String, List<IndexTuple>> fetchedMap = indexStore.load();
 
-        Assert.assertEquals(dummyMap().size(),fetchedMap.size());
+        Assert.assertEquals(dummyMap().size(), fetchedMap.size());
+
     }
+
 
     private Map<String, List<IndexTuple>> dummyMap() {
         final Map<String, List<IndexTuple>> indexMap = new ConcurrentHashMap<>();
@@ -37,4 +39,6 @@ public class GsonInvertedStoreTest extends AbstractTest {
         indexMap.put("apple", Lists.newArrayList(new IndexTuple(1, 0), new IndexTuple(1, 0), new IndexTuple(1, 0)));
         return indexMap;
     }
+
+
 }
