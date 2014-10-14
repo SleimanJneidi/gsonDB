@@ -10,7 +10,9 @@ import java.util.Map;
  */
 public interface InvertedIndexStore {
 
-    Map<String, List<IndexTuple>> load() throws IOException;
+    Map<String, List<IndexTuple>> load(String stringOfTokens);
 
-    void store(Map<String, List<IndexTuple>> invertedIndexMap) throws IOException;
+    Map<String, List<IndexTuple>> load();
+
+    void store(Map<String, List<IndexTuple>> invertedIndexMap);
 }

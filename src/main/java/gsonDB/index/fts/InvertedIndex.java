@@ -1,6 +1,10 @@
 package gsonDB.index.fts;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.sun.tools.javac.util.Pair;
 import gsonDB.DB;
 
@@ -14,18 +18,16 @@ import java.util.*;
 public class InvertedIndex implements TextIndex {
 
     private Map<String, List<IndexTuple>> indexMap;
-    private final DB db;
+
     private final InvertedIndexStore indexStore;
 
-    private InvertedIndex(final DB db, InvertedIndexStore indexStore) throws IOException {
-        this.db = db;
+    private InvertedIndex(InvertedIndexStore indexStore) throws IOException {
         this.indexStore = indexStore;
-        indexMap = indexStore.load();
     }
 
     public static InvertedIndex getInstance(Class<?> entityType, DB db) throws IOException {
-        File indexFile = new File(db.getDBDir().getPath() + File.pathSeparator + "__fts_" + entityType.getSimpleName());
-        return new InvertedIndex(db, JsonInvertedIndexStore.getInstance(indexFile));
+        File indexFile = new File(db.getDBDir().getPath() + File.separator + entityType.getSimpleName() + "__fts");
+        return new InvertedIndex(JsonInvertedIndexStore.getInstance(indexFile));
     }
 
 
@@ -35,6 +37,8 @@ public class InvertedIndex implements TextIndex {
         Preconditions.checkArgument(tokens.trim().length() > 0, "tokens should not be an empty string or white spaces");
 
         final List<Pair<String, Integer>> tokenWithPositionList = this.tokenize(tokens);
+
+        Map<String, List<IndexTuple>> indexMap = indexStore.load();
 
         for (Pair<String, Integer> stringPositionPair : tokenWithPositionList) {
             final IndexTuple indexTuple = new IndexTuple(documentId, stringPositionPair.snd);
@@ -47,13 +51,19 @@ public class InvertedIndex implements TextIndex {
                 indexMap.put(stringPositionPair.fst, newIndexTuples);
             }
         }
+        indexStore.store(indexMap);
 
-        try {
-            this.indexStore.store(indexMap);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    }
 
+    public Set<Long> search(String stringToSearch) {
+        Preconditions.checkNotNull(stringToSearch);
+        Preconditions.checkArgument(stringToSearch.trim().length() > 0);
+
+        Set<Long> results = new HashSet<>();
+        Map<String, List<IndexTuple>> indexMap = indexStore.load(stringToSearch);
+        // TODO get documents intersection
+
+        return results;
     }
 
     private List<Pair<String, Integer>> tokenize(String tokens) {
@@ -77,13 +87,4 @@ public class InvertedIndex implements TextIndex {
         return tokenWithPositionList;
     }
 
-    public Set<Long> search(String tokens) {
-        throw null;
-    }
-
-
-
-    public Map<String, List<IndexTuple>> getIndexMap() {
-        return Collections.unmodifiableMap(this.indexMap);
-    }
 }
