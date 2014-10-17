@@ -1,24 +1,21 @@
 package gsonDB.index;
 
-import com.google.common.base.Optional;
 import gsonDB.AbstractTest;
-import gsonDB.LongKeyException;
 import gsonDB.Person;
 import junit.framework.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Created by Sleiman on 03/10/2014.
  */
-public class DefaultIndexProcessorTest extends AbstractTest {
+public class PrimaryIndexProcessorTest extends AbstractTest {
 
     @Test
     public void testCanInsertIndexKeyEntry() throws Exception {
-        try (DefaultIndexProcessor processor = new DefaultIndexProcessor(Person.class, this.testDB)) {
+        try (PrimaryIndexProcessor processor = new PrimaryIndexProcessor(Person.class, this.testDB)) {
             List<IndexKeyEntry> mockedIndexEntries = mockedIndexEntries();
 
             for (IndexKeyEntry indexKeyEntry : mockedIndexEntries()) {
@@ -35,7 +32,7 @@ public class DefaultIndexProcessorTest extends AbstractTest {
     @Test
     public void testCanUpdateIndex() throws Exception {
 
-        DefaultIndexProcessor processor = new DefaultIndexProcessor(Person.class, this.testDB);
+        PrimaryIndexProcessor processor = new PrimaryIndexProcessor(Person.class, this.testDB);
         List<IndexKeyEntry> mockedIndexEntries = mockedIndexEntries();
 
         for (IndexKeyEntry indexKeyEntry : mockedIndexEntries) {

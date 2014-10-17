@@ -16,7 +16,7 @@ public class IndexProcessorTest extends AbstractTest{
     public void testCanAddTypeToIndex() throws IOException {
         IndexProcessor indexProcessor = IndexProcessor.getIndexProcessor(Person.class, testDB);
         Assert.assertEquals(Person.class, indexProcessor.getEntityType());
-        Assert.assertTrue(indexProcessor instanceof DefaultIndexProcessor);
+        Assert.assertTrue(indexProcessor instanceof PrimaryIndexProcessor);
     }
 
 
