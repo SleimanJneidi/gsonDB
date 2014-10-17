@@ -4,13 +4,10 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import gsonDB.DB;
-import gsonDB.LongKeyException;
-import gsonDB.index.DefaultIndexProcessor;
 import gsonDB.index.IndexKeyEntry;
 import gsonDB.utils.FileUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -90,6 +87,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
 
     @Override
     public void update(long id, Object newValue) throws IOException {
+        // TODO: implement this method
         /*
         Preconditions.checkNotNull(id);
         Preconditions.checkNotNull(newValue);

@@ -31,7 +31,7 @@ public abstract class IndexProcessor implements AutoCloseable{
         if (INDEX_PROCESSORS.containsKey(type)) {
             return INDEX_PROCESSORS.get(type);
         }
-        IndexProcessor newHandler = new DefaultIndexProcessor(type,db); // FIXME: use default for now
+        IndexProcessor newHandler = new PrimaryIndexProcessor(type,db); // FIXME: use primary for now
         INDEX_PROCESSORS.put(type, newHandler);
         return newHandler;
     }

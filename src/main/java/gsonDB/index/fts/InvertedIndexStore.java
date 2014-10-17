@@ -10,9 +10,9 @@ import java.util.Map;
  */
 public interface InvertedIndexStore {
 
-    Map<String, List<IndexTuple>> load(String stringOfTokens);
+    Map<String, List<IndexTuple>> loadEntriesWithTokens(String stringOfTokens);
 
-    Map<String, List<IndexTuple>> load();
+    Map<String, List<IndexTuple>> loadAllEntries();
 
     void store(Map<String, List<IndexTuple>> invertedIndexMap);
 }

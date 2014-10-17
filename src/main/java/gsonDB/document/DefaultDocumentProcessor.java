@@ -38,6 +38,9 @@ public class DefaultDocumentProcessor extends BasicDocumentProcessor {
 
     @Override
     public void close() throws Exception {
+        if (this.indexProcessor != null) { // FIXME: thread-safety??
+            this.indexProcessor.close();
+        }
         this.dataFile.close();
     }
 }
