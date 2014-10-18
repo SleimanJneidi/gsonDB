@@ -3,7 +3,7 @@ package gsonDB.utils;
 /**
  * Created by Sleiman on 18/10/2014.
  */
-public abstract class ExecuteClosable<T> {
+public abstract class ExecuteCloseable<T> {
 
     abstract T execute();
 
