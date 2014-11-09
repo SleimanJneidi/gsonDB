@@ -11,29 +11,30 @@ import org.junit.Test;
 import java.util.*;
 
 /**
+ *
  * Created by Sleiman on 25/10/2014.
  */
-public class BasicDocumentStoreTest extends AbstractTest {
+public class TypedDocumentStoreTest extends AbstractTest {
 
     @Test
     public void testCanInsertDocuments() {
         List<Person> persons = Person.createShortList();
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
         for (Person person : persons) {
-            basicDocumentStore.insert(person);
+            typedDocumentStore.insert(person);
         }
-        List<Person> fromDB = basicDocumentStore.findAll();
+        List<Person> fromDB = typedDocumentStore.findAll();
         Assert.assertEquals(fromDB.size(), persons.size());
     }
 
     @Test
     public void testCanFindDocument() {
         List<Person> persons = Person.createShortList();
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
         for (Person person : persons) {
-            basicDocumentStore.insert(person);
+            typedDocumentStore.insert(person);
         }
-        List<Person> females = basicDocumentStore.find(new Predicate<Person>() {
+        List<Person> females = typedDocumentStore.find(new Predicate<Person>() {
             @Override
             public boolean apply(Person input) {
                 return input.getGender() == Gender.FEMALE;
@@ -47,9 +48,9 @@ public class BasicDocumentStoreTest extends AbstractTest {
     @Test
     public void testCanFindDocumentById() {
         Person person = Person.createShortList().get(0);
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
-        String id = basicDocumentStore.insert(person);
-        Optional<Person> resultOptional = basicDocumentStore.findById(id);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
+        String id = typedDocumentStore.insert(person);
+        Optional<Person> resultOptional = typedDocumentStore.findById(id);
 
         Assert.assertTrue(resultOptional.isPresent());
         Assert.assertEquals(person.getEmail(), resultOptional.get().getEmail());
@@ -58,10 +59,10 @@ public class BasicDocumentStoreTest extends AbstractTest {
     @Test
     public void testCannotFindAbsentDocument() {
         Person person = Person.createShortList().get(0);
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
-        basicDocumentStore.insert(person);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
+        typedDocumentStore.insert(person);
 
-        Optional<Person> resultOptional = basicDocumentStore.findById(UUID.randomUUID().toString());
+        Optional<Person> resultOptional = typedDocumentStore.findById(UUID.randomUUID().toString());
         Assert.assertFalse(resultOptional.isPresent());
     }
 
@@ -69,13 +70,13 @@ public class BasicDocumentStoreTest extends AbstractTest {
     public void testCanDeleteDocument() {
 
         Person person = Person.createShortList().get(0);
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
 
-        String objectId = basicDocumentStore.insert(person);
-        Assert.assertEquals(1, basicDocumentStore.count());
+        String objectId = typedDocumentStore.insert(person);
+        Assert.assertEquals(1, typedDocumentStore.count());
 
-        basicDocumentStore.delete(objectId);
-        Assert.assertEquals(0, basicDocumentStore.count());
+        typedDocumentStore.delete(objectId);
+        Assert.assertEquals(0, typedDocumentStore.count());
 
     }
 
@@ -83,12 +84,12 @@ public class BasicDocumentStoreTest extends AbstractTest {
     public void testCanUpdateDocument() {
         Person person = Person.createShortList().get(0);
 
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
-        String objectId = basicDocumentStore.insert(person);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
+        String objectId = typedDocumentStore.insert(person);
 
         Person newPerson = Person.createShortList().get(1);
 
-        boolean update = basicDocumentStore.update(objectId, newPerson);
+        boolean update = typedDocumentStore.update(objectId, newPerson);
         Assert.assertTrue(update);
     }
 
@@ -96,9 +97,9 @@ public class BasicDocumentStoreTest extends AbstractTest {
     public void testFilterWithSorting() {
         List<Person> persons = Person.createShortList();
 
-        BasicDocumentStore<Person> basicDocumentStore = new BasicDocumentStore<>(Person.class, testDB);
+        TypedDocumentStore<Person> typedDocumentStore = new TypedDocumentStore<>(Person.class, testDB);
         for (Person person : persons) {
-            basicDocumentStore.insert(person);
+            typedDocumentStore.insert(person);
         }
         Comparator<Person> comparator = new Comparator<Person>() {
             @Override
@@ -108,7 +109,7 @@ public class BasicDocumentStoreTest extends AbstractTest {
         };
         Collections.sort(persons,comparator);
 
-        List<Person> fromDB = basicDocumentStore.findAll(comparator);
+        List<Person> fromDB = typedDocumentStore.findAll(comparator);
 
 
         for (int i = 0; i < persons.size(); i++) {

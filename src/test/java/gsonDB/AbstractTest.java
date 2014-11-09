@@ -1,5 +1,6 @@
 package gsonDB;
 
+import com.google.common.base.Function;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -7,6 +8,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 
 /**
+ *
  * Created by Sleiman on 30/09/2014.
  */
 public abstract class AbstractTest {
@@ -19,8 +21,19 @@ public abstract class AbstractTest {
     @After
     public void cleanup() {
         File dbDir = testDB.getDBDir();
-        for (File file : dbDir.listFiles()) {
-            file.delete();
+        deleteDirectory(dbDir);
+
+
+    }
+
+    public void deleteDirectory(File directory) {
+        File[] files = directory.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                deleteDirectory(file);
+            } else {
+                file.delete();
+            }
         }
 
     }
