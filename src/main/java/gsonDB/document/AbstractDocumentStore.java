@@ -1,40 +1,35 @@
 package gsonDB.document;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 import gsonDB.DB;
 import gsonDB.utils.CompressionUtils;
 
 import java.io.*;
-import java.lang.reflect.Type;
 import java.util.*;
 
 /**
- * Created by Sleiman on 25/10/2014.
+ *
+ * Created by Sleiman on 09/11/2014.
+ *
  */
-public class BasicDocumentStore<T> implements DocumentStore<T>{
+public abstract class AbstractDocumentStore<T> implements DocumentStore<T> {
 
     protected final File documentDir;
-    private final Type type;
-    private final Gson gson = new Gson();
 
-    public BasicDocumentStore(Class<T> entity, DB db) {
-
-        type = TypeToken.of(entity).getType();
-        String dirName = entity.getSimpleName() + "_data";
+    protected AbstractDocumentStore(String collectionName, DB db){
+        String dirName = collectionName + "_data";
         this.documentDir = new File(db.getDBDir(), dirName);
         if(!this.documentDir.exists()){
             this.documentDir.mkdir();
         }
-
     }
 
     @Override
     public String insert(T object) {
-        String id = UUID.randomUUID().toString();
+        String id = idGenerator().apply(object);
         File newEntryFileName = new File(documentDir,id);
         try(OutputStream outputStream = new FileOutputStream(newEntryFileName)){
             writeObject(outputStream,object);
@@ -47,7 +42,7 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
     @Override
     public boolean delete(String id) {
         Optional<File> fileOptional = fileWithName(id);
-        if(!fileOptional.isPresent()){
+        if (!fileOptional.isPresent()) {
             return false;
         }
         File documentFile = fileOptional.get();
@@ -57,13 +52,13 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
     @Override
     public boolean update(String id, T object) {
         Optional<File> fileOptional = fileWithName(id);
-        if(!fileOptional.isPresent()){
+        if (!fileOptional.isPresent()) {
             return false;
         }
-        try(OutputStream outputStream = new FileOutputStream(fileOptional.get())){
-            writeObject(outputStream,object);
+        try (OutputStream outputStream = new FileOutputStream(fileOptional.get())) {
+            writeObject(outputStream, object);
             return true;
-        }catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -73,7 +68,7 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
         Preconditions.checkNotNull(id);
         Optional<File> fileOptional = fileWithName(id);
 
-        if(!fileOptional.isPresent()){
+        if (!fileOptional.isPresent()) {
             return Optional.absent();
         }
         return Optional.of(readFromFile(fileOptional.get()));
@@ -90,13 +85,13 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
     }
 
     @Override
-    public List<T> findAll(Comparator<? super T> comparator){
+    public List<T> findAll(Comparator<? super T> comparator) {
         return find(new Predicate<T>() {
             @Override
             public boolean apply(T input) {
                 return true;
             }
-        },comparator);
+        }, comparator);
     }
 
     @Override
@@ -105,7 +100,7 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
 
         for (File documentFile : this.documentDir.listFiles()) {
             T object = readFromFile(documentFile);
-            if(predicate.apply(object)){
+            if (predicate.apply(object)) {
                 results.add(object);
             }
         }
@@ -114,22 +109,17 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
     }
 
     @Override
-    public List<T> find(Predicate<T> filter, Comparator<? super T> comparator){
+    public List<T> find(Predicate<T> filter, Comparator<? super T> comparator) {
         Preconditions.checkNotNull(comparator);
         Preconditions.checkNotNull(filter);
         Set<T> results = new TreeSet<>(comparator);
         for (File documentFile : this.documentDir.listFiles()) {
             T object = readFromFile(documentFile);
-            if(filter.apply(object)){
+            if (filter.apply(object)) {
                 results.add(object);
             }
         }
         return new ArrayList<>(results);
-    }
-
-    @Override
-    public int count() {
-        return this.documentDir.list().length;
     }
 
     private T readFromFile(File documentFile) {
@@ -137,35 +127,44 @@ public class BasicDocumentStore<T> implements DocumentStore<T>{
         try (BufferedInputStream reader = new BufferedInputStream(new FileInputStream(documentFile))) {
             reader.read(compressedBuffer);
             byte[] buffer = CompressionUtils.decompress(compressedBuffer);
-            String jsonString = new String(buffer);
-            T json = this.gson.fromJson(jsonString, type);
-
-            return json;
+            return this.decode().apply(buffer);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Optional<File> fileWithName(final String fileName){
-        File[] matchingFiles = documentDir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return fileName.equals(name);
-            }
-        });
-        if(matchingFiles == null || matchingFiles.length ==0){
-            return Optional.absent();
-        }
-        return Optional.of(matchingFiles[0]);
-    }
-
     private void writeObject(final OutputStream outputStream, T object){
-        byte[] jsonStringBytes = gson.toJson(object).getBytes();
-        byte[] compressedBytes = CompressionUtils.compress(jsonStringBytes);
+        byte[] bytes = encode().apply(object);
+        byte[] compressedBytes = CompressionUtils.compress(bytes);
+
         try {
             outputStream.write(compressedBytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private Optional<File> fileWithName(final String fileName) {
+        File[] matchingFiles = documentDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return fileName.equals(name);
+            }
+        });
+        if (matchingFiles == null || matchingFiles.length == 0) {
+            return Optional.absent();
+        }
+        return Optional.of(matchingFiles[0]);
+    }
+    protected abstract Function<T,byte[]> encode();
+
+    protected abstract Function<byte[],T> decode();
+
+    protected abstract Function<T,String> idGenerator();
+
+    @Override
+    public int count() {
+        return this.documentDir.list().length;
+    }
+
 }

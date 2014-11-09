@@ -11,9 +11,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
+ *
  * Created by Sleiman on 28/09/2014.
  */
 
@@ -31,28 +34,20 @@ public class GsonDB implements DB {
         this.dbDir = dbDir;
     }
 
+    @Override
+    public Set<String> collections(){
+        Set<String> collections = new HashSet<>();
+        for(File file: dbDir.listFiles()){
+            if(file.isDirectory()){
+                collections.add(file.getName());
+            }
+        }
+        return collections;
+    }
 
     @Override
     public File getDBDir() {
         return dbDir;
-    }
-
-    @Override
-    public <T> List<T> findAll(final Class<T> clazz) {
-        try (DocumentProcessor documentProcessor = DocumentProcessor.getDocumentProcessor(clazz, this)) {
-            return documentProcessor.findAll(clazz);
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
-    }
-
-    @Override
-    public <T> List<T> find(final Class<T> clazz, final Predicate<T> filter) {
-        try (DocumentProcessor documentProcessor = DocumentProcessor.getDocumentProcessor(clazz, this)) {
-            return documentProcessor.find(clazz, filter);
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
     }
 
     @Override

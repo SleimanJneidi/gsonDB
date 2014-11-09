@@ -11,9 +11,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 /**
+ *
  * Created by Sleiman on 08/11/2014.
  */
-public class CappedDocumentStore<T> extends BasicDocumentStore<T> {
+public class CappedDocumentStore<T> extends TypedDocumentStore<T> {
 
     private final int cap;
 
@@ -26,6 +27,7 @@ public class CappedDocumentStore<T> extends BasicDocumentStore<T> {
     public String insert(T object){
         if(this.count() == cap){
             File[] files = this.documentDir.listFiles();
+            assert files != null;
             Arrays.sort(files, new Comparator<File>() {
                 @Override
                 public int compare(File file1, File file2) {
