@@ -125,6 +125,36 @@ public class Person {
         return "Name: " + firstName + " " + surName + "\n" + "Age: " + age + "  Gender: " + gender + "\n" + "eMail: " + eMail + "\n";
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Person person = (Person) o;
+
+        if (age != person.age) return false;
+        if (address != null ? !address.equals(person.address) : person.address != null) return false;
+        if (eMail != null ? !eMail.equals(person.eMail) : person.eMail != null) return false;
+        if (firstName != null ? !firstName.equals(person.firstName) : person.firstName != null) return false;
+        if (gender != person.gender) return false;
+        if (phone != null ? !phone.equals(person.phone) : person.phone != null) return false;
+        if (surName != null ? !surName.equals(person.surName) : person.surName != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = firstName != null ? firstName.hashCode() : 0;
+        result = 31 * result + (surName != null ? surName.hashCode() : 0);
+        result = 31 * result + age;
+        result = 31 * result + (gender != null ? gender.hashCode() : 0);
+        result = 31 * result + (eMail != null ? eMail.hashCode() : 0);
+        result = 31 * result + (phone != null ? phone.hashCode() : 0);
+        result = 31 * result + (address != null ? address.hashCode() : 0);
+        return result;
+    }
+
     public static List<Person> createShortList(){
         List<Person> people = new ArrayList<>();
 
