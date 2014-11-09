@@ -12,10 +12,7 @@ import gsonDB.index.IndexKeyEntry;
 import gsonDB.utils.FileUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -47,10 +44,12 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
             long filePointer = indexKeyEntry.getDataFilePointer();
             int recordSize = indexKeyEntry.getRecordSize();
             byte[] buffer = new byte[recordSize];
+
             dataFile.seek(filePointer);
             dataFile.readFully(buffer);
             String json = new String(buffer, "UTF-8");
             T object = gson.fromJson(json, entityType);
+
             return Optional.of(object);
 
         } finally {
@@ -75,6 +74,7 @@ public abstract class BasicDocumentProcessor extends DocumentProcessor {
         List<T> results = new ArrayList<>();
         try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
             reader.setLenient(true);
+
             while (reader.peek() != JsonToken.END_DOCUMENT) {
                 T object = gson.fromJson(reader, entityType);
                 if (predicate.apply(object)) {

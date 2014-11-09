@@ -5,9 +5,9 @@ package gsonDB.utils;
  */
 public abstract class ExecuteCloseable<T> {
 
-    abstract T execute();
+    public abstract T execute();
 
-    <K extends AutoCloseable> T around(K closeable) {
+    public <K extends AutoCloseable> T around(K closeable) {
         try {
             return execute();
         } finally {
